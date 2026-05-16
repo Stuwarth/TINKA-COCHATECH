@@ -5,10 +5,14 @@ import Dashboard from './components/Dashboard';
 import NuevaVenta from './components/NuevaVenta';
 import CoachIA from './components/CoachIA';
 import Login from './components/Login';
+import Register from './components/Register';
+import { registerUser } from './api';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+  const [showRegister, setShowRegister] = useState(false);
+  const [userToken, setUserToken] = useState(null);
+
   // Estado Global para la Demo
   const [balance, setBalance] = useState(1450.00);
   const [transactions, setTransactions] = useState([
@@ -29,8 +33,29 @@ function App() {
     setBalance(prev => prev + amount);
   };
 
+  const handleRegister = async (formData) => {
+    try {
+      const response = await registerUser(formData);
+      // Después del registro, volver a la pantalla de Login
+      // para iniciar sesión con el PIN de la nueva cuenta
+      setShowRegister(false);
+    } catch (error) {
+      throw new Error(error.message || 'Error al registrar');
+    }
+  };
+
   if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
+    return showRegister ? (
+      <Register
+        onRegister={handleRegister}
+        onBackToLogin={() => setShowRegister(false)}
+      />
+    ) : (
+      <Login
+        onLogin={() => setIsAuthenticated(true)}
+        onRegisterClick={() => setShowRegister(true)}
+      />
+    );
   }
 
   return (

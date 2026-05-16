@@ -14,6 +14,21 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  phone?: string;
+  phone: string;
+
+  @IsString()
+  @MinLength(4, { message: 'El PIN debe tener al menos 4 dígitos' })
+  @IsNotEmpty()
+  pin: string;
+
+  @IsString()
+  @IsNotEmpty()
+  business_name: string;
+
+  @IsString()
+  category?: string;
+
+  @IsString()
+  description?: string;
 }
 
