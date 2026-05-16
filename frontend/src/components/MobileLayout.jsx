@@ -1,47 +1,41 @@
-import { Home, PlusCircle, MessageSquare } from 'lucide-react';
+import { Home, PlusSquare, MessageSquare } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import logoTinka from '../assets/img/logoTinka.png';
 
 export default function MobileLayout({ children }) {
   const location = useLocation();
   const currentPath = location.pathname;
 
   return (
-    <div className="flex justify-center bg-gray-200 min-h-screen">
-      {/* Contenedor simulando celular */}
-      <div className="w-full max-w-md bg-gray-50 flex flex-col h-screen shadow-2xl relative overflow-hidden">
+    <div className="flex justify-center bg-[#f7f7f7] min-h-screen font-sans">
+      <div className="w-full max-w-[400px] bg-white flex flex-col h-screen shadow-[0_0_40px_rgba(0,0,0,0.04)] border-x border-[#ebebeb] relative">
         
-        {/* Top App Bar */}
-        <header className="bg-fie-magenta text-white p-4 shadow-md z-10">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-wide">Tinka Coach</h1>
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-sm font-bold">DM</span> {/* Doña Maria */}
-            </div>
-          </div>
+        {/* Top Nav - Minimalist */}
+        <header className="bg-white px-6 py-5 border-b border-[#ebebeb] flex items-center justify-between sticky top-0 z-20">
+          <img src={logoTinka} alt="Tinka" className="h-5 object-contain" />
+          <div className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">Doña María</div>
         </header>
 
-        {/* Contenido principal scrolleable */}
-        <main className="flex-1 overflow-y-auto p-4 pb-24">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-white">
           {children}
         </main>
 
-        {/* Bottom Navigation */}
-        <nav className="bg-white border-t border-gray-200 absolute bottom-0 w-full flex justify-around items-center h-16 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <Link to="/" className={`flex flex-col items-center justify-center w-full h-full ${currentPath === '/' ? 'text-fie-magenta' : 'text-gray-400'}`}>
-            <Home size={24} className={currentPath === '/' ? 'fill-fie-magenta/20' : ''} />
-            <span className="text-[10px] mt-1 font-medium">Inicio</span>
+        {/* Bottom Nav - Linear style */}
+        <nav className="w-full bg-white/80 backdrop-blur-xl border-t border-[#ebebeb] flex justify-between px-8 h-[80px] pb-6 pt-4 shrink-0">
+          <Link to="/" className={`flex flex-col items-center gap-1.5 transition-colors ${currentPath === '/' ? 'text-black' : 'text-[#a1a1a1] hover:text-black'}`}>
+            <Home size={20} strokeWidth={currentPath === '/' ? 2.5 : 1.5} />
+            <span className="text-[9px] font-medium tracking-wide">Overview</span>
           </Link>
           
-          <Link to="/vender" className="flex flex-col items-center justify-center w-full h-full relative">
-            <div className="absolute -top-5 bg-fie-blue text-white p-3 rounded-full shadow-lg border-4 border-gray-50">
-              <PlusCircle size={28} />
-            </div>
-            <span className={`text-[10px] mt-8 font-medium ${currentPath === '/vender' ? 'text-fie-blue font-bold' : 'text-gray-500'}`}>Vender</span>
+          <Link to="/vender" className={`flex flex-col items-center gap-1.5 transition-colors ${currentPath === '/vender' ? 'text-black' : 'text-[#a1a1a1] hover:text-black'}`}>
+            <PlusSquare size={20} strokeWidth={currentPath === '/vender' ? 2.5 : 1.5} />
+            <span className="text-[9px] font-medium tracking-wide">Vender</span>
           </Link>
           
-          <Link to="/coach" className={`flex flex-col items-center justify-center w-full h-full ${currentPath === '/coach' ? 'text-fie-magenta' : 'text-gray-400'}`}>
-            <MessageSquare size={24} className={currentPath === '/coach' ? 'fill-fie-magenta/20' : ''} />
-            <span className="text-[10px] mt-1 font-medium">Coach IA</span>
+          <Link to="/coach" className={`flex flex-col items-center gap-1.5 transition-colors ${currentPath === '/coach' ? 'text-black' : 'text-[#a1a1a1] hover:text-black'}`}>
+            <MessageSquare size={20} strokeWidth={currentPath === '/coach' ? 2.5 : 1.5} />
+            <span className="text-[9px] font-medium tracking-wide">Coach IA</span>
           </Link>
         </nav>
       </div>
