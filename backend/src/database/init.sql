@@ -1,5 +1,5 @@
-// Script para ejecutar en Supabase SQL Editor
-// Copia y pega este contenido en el SQL Editor de tu proyecto Supabase
+-- Script para ejecutar en Supabase SQL Editor
+-- Copia y pega este contenido en el SQL Editor de tu proyecto Supabase
 
 -- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS users (
@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS businesses (
   category TEXT,
   phone TEXT,
   location TEXT,
-  status TEXT DEFAULT 'active',
+  whatsapp_phone TEXT UNIQUE,
+  activation_token TEXT UNIQUE,
+  activation_expires_at TIMESTAMP WITH TIME ZONE,
+  status TEXT DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -33,11 +36,15 @@ CREATE TABLE IF NOT EXISTS businesses (
 CREATE TABLE IF NOT EXISTS sales (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  business_id UUID REFERENCES businesses(id),
   product_name TEXT NOT NULL,
+  quantity INTEGER DEFAULT 1,
   amount DECIMAL(10, 2) NOT NULL,
   payment_method TEXT NOT NULL,
   location TEXT,
   description TEXT,
+  source TEXT DEFAULT 'web',
+  raw_message TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -91,6 +98,20 @@ ON CONFLICT DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_sales_user_id ON sales(user_id);
 CREATE INDEX IF NOT EXISTS idx_sales_created_at ON sales(created_at);
 CREATE INDEX IF NOT EXISTS idx_sales_user_created ON sales(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_sales_business_id ON sales(business_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_created_at ON businesses(created_at);
+CREATE INDEX IF NOT EXISTS idx_businesses_whatsapp_phone ON businesses(whatsapp_phone);
+CREATE INDEX IF NOT EXISTS idx_businesses_activation_token ON businesses(activation_token);
 
+-- ============================================================
+-- MIGRACIÓN: Si las tablas ya existen en Supabase, ejecutar esto:
+-- ============================================================
+-- ALTER TABLE businesses ADD COLUMN IF NOT EXISTS whatsapp_phone TEXT UNIQUE;
+-- ALTER TABLE businesses ADD COLUMN IF NOT EXISTS activation_token TEXT UNIQUE;
+-- ALTER TABLE businesses ADD COLUMN IF NOT EXISTS activation_expires_at TIMESTAMPTZ;
+-- ALTER TABLE businesses ALTER COLUMN status SET DEFAULT 'pending';
+-- ALTER TABLE sales ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id);
+-- ALTER TABLE sales ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
+-- ALTER TABLE sales ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'web';
+-- ALTER TABLE sales ADD COLUMN IF NOT EXISTS raw_message TEXT;

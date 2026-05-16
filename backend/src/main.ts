@@ -26,8 +26,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Prefix global
-  app.setGlobalPrefix('api');
+  // Prefix global (excluir webhook de WhatsApp)
+  app.setGlobalPrefix('api', {
+    exclude: ['webhook/whatsapp'],
+  });
 
   await app.listen(process.env.PORT ?? 3000, () => {
     console.log(

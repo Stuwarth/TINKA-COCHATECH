@@ -26,10 +26,14 @@ export class SalesService {
       .insert([
         {
           user_id: userId,
+          business_id: createSaleDto.business_id,
           product_name: createSaleDto.product_name,
+          quantity: createSaleDto.quantity || 1,
           amount: createSaleDto.amount,
           payment_method: createSaleDto.payment_method,
           location: createSaleDto.location || 'Tienda',
+          source: createSaleDto.source || 'web',
+          raw_message: createSaleDto.raw_message,
         },
       ])
       .select()

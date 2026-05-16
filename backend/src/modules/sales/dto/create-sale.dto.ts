@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsNotEmpty, IsPositive, MinLength } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsPositive, MinLength, IsOptional, IsInt, Min } from 'class-validator';
 
 export class CreateSaleDto {
   @IsString()
@@ -16,6 +16,23 @@ export class CreateSaleDto {
   payment_method: string;
 
   @IsString()
+  @IsOptional()
   location?: string;
-}
 
+  @IsString()
+  @IsOptional()
+  business_id?: string;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  quantity?: number;
+
+  @IsString()
+  @IsOptional()
+  source?: string;
+
+  @IsString()
+  @IsOptional()
+  raw_message?: string;
+}
