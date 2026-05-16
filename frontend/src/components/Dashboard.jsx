@@ -1,70 +1,73 @@
-import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
-export default function Dashboard() {
+export default function Dashboard({ balance = 1450, transactions = [] }) {
+  const formattedBalance = balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const [integerPart, decimalPart] = formattedBalance.split('.');
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Saludo y Semáforo */}
-      <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-gray-500 text-sm font-medium">Hola Doña María 👋</h2>
-            <h3 className="text-xl font-bold text-gray-800 mt-1">Salud del negocio</h3>
-          </div>
-          <div className="bg-green-50 px-3 py-1 rounded-full border border-green-100 flex items-center">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-            <span className="text-green-700 text-xs font-bold">Excelente</span>
-          </div>
+    <div className="animate-in fade-in duration-700 px-6 pt-8">
+      {/* Hero Balance - Editorial Typography */}
+      <div className="mb-12">
+        <h2 className="text-[11px] uppercase tracking-[0.2em] text-[#888] font-semibold mb-3">Balance Actual</h2>
+        <div className="flex items-baseline gap-1">
+          <span className="text-2xl text-[#888] font-light">Bs.</span>
+          <h1 className="text-6xl font-medium tracking-tighter text-black">{integerPart}<span className="text-2xl text-[#a1a1a1]">.{decimalPart}</span></h1>
         </div>
-        <p className="text-sm text-gray-600 mt-3 leading-relaxed">Tus ventas están <strong>15% arriba</strong> comparado con la semana pasada. ¡Sigue así!</p>
       </div>
 
-      {/* Tarjeta principal de ganancias */}
-      <div className="bg-gradient-to-br from-fie-blue to-[#001a40] p-6 rounded-3xl text-white shadow-lg shadow-fie-blue/20 relative overflow-hidden">
-        <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4">
-          <DollarSign size={150} />
+      {/* Metric Cards - Minimalist Grid */}
+      <div className="grid grid-cols-2 gap-3 mb-12">
+        <div className="border border-[#ebebeb] p-4 rounded-lg bg-[#fafafa]">
+          <h3 className="text-[10px] uppercase tracking-wider text-[#888] mb-1">Crecimiento</h3>
+          <p className="text-lg font-medium text-green-600">+15.2%</p>
         </div>
-        <p className="text-white/80 text-sm font-medium">Ventas de esta semana</p>
-        <h2 className="text-4xl font-black mt-2 tracking-tight">Bs. 1,450<span className="text-lg text-white/60 font-medium">.00</span></h2>
+        <div className="border border-[#ebebeb] p-4 rounded-lg bg-[#fafafa]">
+          <h3 className="text-[10px] uppercase tracking-wider text-[#888] mb-1">Meta Semanal</h3>
+          <p className="text-lg font-medium text-black">72%</p>
+          <div className="w-full h-1 bg-[#eaeaea] mt-2 rounded-none">
+            <div className="h-full bg-black" style={{ width: '72%' }}></div>
+          </div>
+        </div>
+      </div>
+
+      {/* WOW Factor: Oferta de Crédito AI */}
+      <div className="mb-12 border border-[#ebebeb] p-5 bg-black text-white relative overflow-hidden">
+        {/* Glow effect */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full" />
         
-        <div className="mt-6 flex items-center bg-white/10 rounded-2xl p-3 backdrop-blur-md">
-          <Target className="text-fie-magenta mr-3" size={20} />
-          <div className="flex-1">
-            <div className="flex justify-between text-xs text-white/80 mb-1">
-              <span>Meta semanal (Bs. 2000)</span>
-              <span className="font-bold">72%</span>
-            </div>
-            <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-fie-magenta h-1.5 rounded-full relative" style={{ width: '72%' }}>
-                <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/30 animate-[pulse_2s_ease-in-out_infinite]"></div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <h3 className="text-[10px] uppercase tracking-widest font-semibold text-white/80">Coach IA • Oportunidad</h3>
+        </div>
+        <p className="text-sm font-light mb-4 leading-relaxed">
+          Tus ventas superan el promedio de la zona en un <strong className="font-semibold text-white">15.2%</strong>. Calificas para expandir tu negocio hoy.
+        </p>
+        <button className="bg-white text-black text-xs uppercase tracking-widest font-semibold px-4 py-3 w-full hover:bg-[#f0f0f0] transition-colors">
+          Tomar Microcrédito (Bs. 2,000)
+        </button>
+      </div>
+
+      {/* Transactions - Wireframe aesthetics */}
+      <div>
+        <div className="flex justify-between items-baseline mb-6 border-b border-[#ebebeb] pb-4">
+          <h2 className="text-sm font-medium text-black">Transacciones</h2>
+          <span className="text-[10px] text-[#888] uppercase tracking-wider">Hoy</span>
+        </div>
+        
+        <div className="flex flex-col">
+          {transactions.map(sale => (
+            <div key={sale.id} className="flex items-center justify-between py-4 border-b border-[#f5f5f5] hover:bg-[#fafafa] transition-colors -mx-6 px-6 cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 rounded border border-[#ebebeb] flex items-center justify-center text-[#888]">
+                  <ArrowUpRight size={14} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-black">{sale.prod}</h4>
+                  <p className="text-[11px] text-[#888] mt-0.5">{sale.method} · {sale.time}</p>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráfico Visual */}
-      <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-gray-800">Últimos 5 días</h3>
-          <button className="text-fie-magenta text-xs font-bold bg-fie-magenta/5 px-3 py-1.5 rounded-full">Ver reporte</button>
-        </div>
-        
-        <div className="flex items-end justify-between h-40 pt-4 px-2">
-          {[
-            { day: 'Lun', val: 40, amt: '250' },
-            { day: 'Mar', val: 70, amt: '450', high: true },
-            { day: 'Mié', val: 30, amt: '150' },
-            { day: 'Jue', val: 50, amt: '300' },
-            { day: 'Hoy', val: 60, amt: '400' },
-          ].map((bar, i) => (
-            <div key={i} className="flex flex-col items-center flex-1 group">
-              <span className="text-[10px] text-gray-400 font-medium mb-1 opacity-0 group-hover:opacity-100 transition-opacity">Bs.{bar.amt}</span>
-              <div 
-                className={`w-full max-w-[2.5rem] rounded-t-xl transition-all duration-700 ease-out group-hover:opacity-80 ${bar.high ? 'bg-fie-magenta shadow-[0_0_15px_rgba(196,0,121,0.3)]' : 'bg-gray-100'}`} 
-                style={{ height: `${bar.val}%` }}
-              ></div>
-              <span className={`text-[10px] mt-2 font-medium ${bar.high ? 'text-fie-magenta font-bold' : 'text-gray-400'}`}>{bar.day}</span>
+              <div className="text-right">
+                <span className="text-sm font-medium text-black">+{sale.amount.toFixed(2)}</span>
+              </div>
             </div>
           ))}
         </div>
