@@ -8,7 +8,22 @@ CREATE TABLE IF NOT EXISTS users (
   phone TEXT,
   password_hash TEXT NOT NULL,
   full_name TEXT,
+  pin TEXT,
   role TEXT DEFAULT 'entrepreneur',
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Tabla de Negocios
+CREATE TABLE IF NOT EXISTS businesses (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  phone TEXT,
+  location TEXT,
   status TEXT DEFAULT 'active',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -48,12 +63,14 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
 
 -- Políticas RLS para acceso temporal (TODO: Refinar para producción)
 CREATE POLICY "Permitir todo usuarios" ON users FOR ALL USING (true);
 CREATE POLICY "Permitir todo ventas" ON sales FOR ALL USING (true);
 CREATE POLICY "Permitir todo métodos pago" ON payment_methods FOR ALL USING (true);
 CREATE POLICY "Permitir todo ubicaciones" ON locations FOR ALL USING (true);
+CREATE POLICY "Permitir todo negocios" ON businesses FOR ALL USING (true);
 
 -- Insertar datos de ejemplo
 INSERT INTO payment_methods (name, description) VALUES
@@ -74,4 +91,6 @@ ON CONFLICT DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_sales_user_id ON sales(user_id);
 CREATE INDEX IF NOT EXISTS idx_sales_created_at ON sales(created_at);
 CREATE INDEX IF NOT EXISTS idx_sales_user_created ON sales(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
+CREATE INDEX IF NOT EXISTS idx_businesses_created_at ON businesses(created_at);
 

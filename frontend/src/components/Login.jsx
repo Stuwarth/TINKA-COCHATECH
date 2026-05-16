@@ -2,7 +2,7 @@ import { useState } from 'react';
 import logoTinka from '../assets/img/logoTinka.png';
 import { Delete } from 'lucide-react';
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onRegisterClick }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
@@ -54,6 +54,13 @@ export default function Login({ onLogin }) {
             <Delete size={20} strokeWidth={1.5} />
           </button>
         </div>
+
+        <button
+          onClick={onRegisterClick}
+          className="w-full mt-8 py-3 text-black border border-[#ebebeb] rounded-lg font-medium hover:bg-[#fafafa] transition-colors"
+        >
+          Crear Nueva Cuenta
+        </button>
       </div>
     </div>
   );
