@@ -143,13 +143,21 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      // Enviar credenciales por WhatsApp (no bloquea si falla)
-      await this.whatsappService.sendCredentials(
-        registerDto.phone,
-        registerDto.email,
-        token,
+      // Construir el enlace de activación de WhatsApp
+      const whatsappLink = this.whatsappService.buildActivationLink(
+        activationToken,
         registerDto.business_name,
       );
+
+      // Enviar mensaje de bienvenida y activación por WhatsApp (no bloquea si falla)
+      const welcomeMessage = `¡Hola ${registerDto.full_name}! 👋\n\n` +
+        `¡Gracias por registrarte en Tinka! Tu negocio *${registerDto.business_name}* ha sido creado con éxito. 🚀\n\n` +
+        `Para activar tu integración de WhatsApp y comenzar a registrar tus ventas con Inteligencia Artificial, por favor haz clic en el siguiente enlace y envía el mensaje de activación:\n\n` +
+        `👉 ${whatsappLink}\n\n` +
+        `O si prefieres, envía directamente el siguiente mensaje al bot:\n` +
+        `*ACTIVAR:${activationToken}:${registerDto.business_name}*`;
+
+      await this.whatsappService.sendMessage(registerDto.phone, welcomeMessage);
 
       this.logger.log(
         `Negocio registrado: ${registerDto.business_name} | Token: ${activationToken} | Link: ${whatsappLink}`,
