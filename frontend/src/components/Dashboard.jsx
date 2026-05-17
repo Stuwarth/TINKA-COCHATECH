@@ -128,7 +128,30 @@ export default function Dashboard({ balance, transactions, userName, businessNam
 
       <div className="px-6">
 
-        {/* Banner de Vinculación de WhatsApp Pendiente */}
+        {/* Weekly Goal Progress */}
+        <div className="mb-6 bg-white border border-[#ebebeb] p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-xs font-bold text-[#002C6A] uppercase tracking-wider flex items-center gap-1.5">
+              <Target size={14} className="text-[#E6007E]" /> Meta Semanal
+            </h3>
+            <span className="text-[10px] font-bold text-[#888] bg-[#f0f4f8] px-2 py-1 rounded-full">
+              Bs. 1000
+            </span>
+          </div>
+          
+          <div className="w-full bg-[#f0f4f8] rounded-full h-2.5 mb-2 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-[#002C6A] to-[#3FB6DA] h-2.5 rounded-full transition-all duration-1000 ease-out" 
+              style={{ width: `${Math.min(((summary?.total_week || totalBalance) / 1000) * 100, 100)}%` }}
+            ></div>
+          </div>
+          
+          <div className="flex justify-between items-center text-[10px] font-semibold text-[#888]">
+            <span>Llevas Bs. {(summary?.total_week || totalBalance).toFixed(0)}</span>
+            <span>{summary?.total_week >= 1000 ? 'Meta Superada!' : `Faltan Bs. ${Math.max(1000 - (summary?.total_week || totalBalance), 0).toFixed(0)}`}</span>
+          </div>
+        </div>
+
         {isPending && (
           <div className="mb-8 p-5 bg-gradient-to-r from-[#002C6A] via-[#0b3875] to-[#E6007E]/20 border border-[#E6007E]/20 rounded-[28px] shadow-[0_10px_30px_rgba(230,0,126,0.15)] relative overflow-hidden animate-in slide-in-from-top-6 duration-500">
             <div className="absolute top-0 right-0 w-28 h-28 bg-[#25D366]/10 rounded-full blur-xl -translate-y-6 translate-x-6" />
