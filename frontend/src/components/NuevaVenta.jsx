@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { Delete, Check, Mic } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Delete, Check, Mic, ShoppingBag } from 'lucide-react';
 
 export default function NuevaVenta({ onAddTransaction }) {
   const [amount, setAmount] = useState('0');
   const [method, setMethod] = useState('efectivo');
+  const [productName, setProductName] = useState('');
   const [step, setStep] = useState('input'); // input | qr_display | success
   const [isListening, setIsListening] = useState(false);
+  const [voiceText, setVoiceText] = useState('');
+  const recognitionRef = useRef(null);
 
   const handlePress = (num) => {
     if (amount === '0') setAmount(num);
@@ -17,13 +20,69 @@ export default function NuevaVenta({ onAddTransaction }) {
     else setAmount('0');
   };
 
+  // Micrófono REAL con Web Speech API
   const handleVoiceInput = () => {
-    setIsListening(true);
-    setTimeout(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      // Fallback si el navegador no soporta Speech API
+      setIsListening(true);
+      setVoiceText('Escuchando...');
+      setTimeout(() => {
+        setIsListening(false);
+        setVoiceText('');
+        setProductName('Venta por voz');
+        setAmount('45');
+      }, 2000);
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
       setIsListening(false);
-      setAmount('45');
-      setMethod('qr');
-    }, 2500);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'es-BO';
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceText('Escuchando...');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setVoiceText(transcript);
+      
+      // Intentar extraer número del texto hablado
+      const numbers = transcript.match(/\d+/);
+      if (numbers) {
+        setAmount(numbers[0]);
+      }
+      
+      // Usar el texto como nombre del producto
+      const cleanText = transcript.replace(/\d+/g, '').trim();
+      if (cleanText) {
+        setProductName(cleanText);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setTimeout(() => setVoiceText(''), 2000);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      setVoiceText('No se pudo escuchar');
+      setTimeout(() => setVoiceText(''), 2000);
+    };
+
+    recognition.start();
   };
 
   const handleSave = () => {
@@ -35,26 +94,27 @@ export default function NuevaVenta({ onAddTransaction }) {
   };
 
   const finalizePayment = () => {
-    if (onAddTransaction) onAddTransaction(amount, method);
+    if (onAddTransaction) onAddTransaction(amount, method, productName || 'Venta Rápida');
     setStep('success');
     setTimeout(() => { 
       setStep('input'); 
       setAmount('0'); 
+      setProductName('');
     }, 2000);
   };
 
   const formattedAmount = Number(amount).toLocaleString('en-US');
 
-  // URL de la API gratuita para generar QRs reales al vuelo
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=BancoFIE-${Date.now()}-${amount}`;
 
   if (step === 'success') {
     return (
       <div className="flex flex-col items-center justify-center h-full animate-in fade-in duration-500 bg-white">
-        <div className="w-16 h-16 border border-[#ebebeb] rounded-full flex items-center justify-center mb-6 bg-black">
+        <div className="w-16 h-16 border border-[#ebebeb] rounded-full flex items-center justify-center mb-6 bg-[#002C6A]">
           <Check size={24} className="text-white" />
         </div>
         <h2 className="text-xl font-medium text-black tracking-tight">Cobro registrado</h2>
+        <p className="text-sm font-semibold text-[#E6007E] mt-1">{productName || 'Venta Rápida'}</p>
         <p className="text-[10px] uppercase tracking-widest text-[#888] mt-2">+Bs. {formattedAmount} añadido a tu balance</p>
       </div>
     );
@@ -66,16 +126,16 @@ export default function NuevaVenta({ onAddTransaction }) {
         <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] mb-8">Escanea para pagar</h2>
         
         <div className="bg-white border border-[#ebebeb] p-6 shadow-sm mb-8 relative">
-          {/* Esquinas para simular scanner */}
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-black -translate-x-2 -translate-y-2" />
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-black translate-x-2 -translate-y-2" />
-          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-black -translate-x-2 translate-y-2" />
-          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-black translate-x-2 translate-y-2" />
+          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#002C6A] -translate-x-2 -translate-y-2" />
+          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#002C6A] translate-x-2 -translate-y-2" />
+          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#002C6A] -translate-x-2 translate-y-2" />
+          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#002C6A] translate-x-2 translate-y-2" />
           
           <img src={qrUrl} alt="QR Code" className="w-48 h-48" />
         </div>
 
         <div className="text-center mb-12">
+          <p className="text-sm font-semibold text-[#E6007E] mb-1">{productName || 'Venta Rápida'}</p>
           <p className="text-3xl font-medium text-black mb-1">Bs. {formattedAmount}</p>
           <p className="text-[10px] uppercase tracking-widest text-[#888]">Banco FIE</p>
         </div>
@@ -83,13 +143,13 @@ export default function NuevaVenta({ onAddTransaction }) {
         <div className="w-full space-y-3">
           <button 
             onClick={finalizePayment}
-            className="w-full text-xs uppercase tracking-widest font-semibold h-14 bg-black text-white hover:bg-[#222] transition-colors"
+            className="w-full text-xs uppercase tracking-widest font-semibold h-14 bg-[#002C6A] text-white hover:bg-[#001b44] transition-colors rounded-2xl"
           >
             Simular Pago Recibido
           </button>
           <button 
             onClick={() => setStep('input')}
-            className="w-full text-xs uppercase tracking-widest font-semibold h-14 border border-[#ebebeb] text-[#888] hover:text-black transition-colors"
+            className="w-full text-xs uppercase tracking-widest font-semibold h-14 border border-[#ebebeb] text-[#888] hover:text-black transition-colors rounded-2xl"
           >
             Cancelar
           </button>
@@ -102,72 +162,84 @@ export default function NuevaVenta({ onAddTransaction }) {
     <div className="flex flex-col h-full bg-white animate-in fade-in duration-500">
       
       {/* Display */}
-      <div className="pt-16 pb-12 px-6 flex flex-col items-center justify-center border-b border-[#ebebeb]">
-        <p className="text-[#888] text-[10px] uppercase tracking-[0.2em] mb-6">Monto a cobrar</p>
+      <div className="pt-8 pb-4 px-6 flex flex-col items-center justify-center bg-gradient-to-b from-[#f8f9fa] to-white border-b border-[#ebebeb] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <p className="text-[#002C6A] text-[10px] font-bold uppercase tracking-[0.2em] mb-3 bg-[#002C6A]/10 px-3 py-1 rounded-full">Monto a cobrar</p>
         <div className="flex items-baseline text-black">
-          <span className="text-2xl text-[#888] mr-2 font-light">Bs.</span>
-          <span className={`text-6xl font-medium tracking-tighter ${amount === '0' ? 'text-[#e0e0e0]' : 'text-black'}`}>
+          <span className="text-2xl text-[#888] mr-2 font-medium">Bs.</span>
+          <span className={`text-[64px] leading-none font-bold tracking-tighter transition-colors ${amount === '0' ? 'text-[#e0e0e0]' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#002C6A] to-[#E6007E]'}`}>
             {formattedAmount}
           </span>
+        </div>
+
+        {/* Campo nombre producto */}
+        <div className="w-full mt-3 flex items-center bg-[#f5f5f5] rounded-xl px-3 py-2.5">
+          <ShoppingBag size={16} className="text-[#888] mr-2 shrink-0" />
+          <input
+            type="text"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder="¿Qué vendiste? (ej: 5 Salteñas)"
+            className="flex-1 bg-transparent text-sm text-[#002C6A] font-medium placeholder:text-[#bbb] focus:outline-none"
+          />
         </div>
       </div>
 
       {/* Toggles */}
-      <div className="flex px-8 py-8 gap-4">
+      <div className="flex px-6 py-4 gap-3">
         <button 
           onClick={() => setMethod('efectivo')}
-          className={`flex-1 pb-2 border-b-2 transition-all text-xs tracking-wide uppercase font-semibold ${method === 'efectivo' ? 'border-black text-black' : 'border-transparent text-[#888]'}`}
+          className={`flex-1 py-3 rounded-2xl transition-all text-xs tracking-wide uppercase font-bold shadow-sm ${method === 'efectivo' ? 'bg-[#002C6A] text-white shadow-[0_4px_15px_rgba(0,44,106,0.3)] scale-[1.02]' : 'bg-[#f5f5f5] text-[#888] hover:bg-[#ebebeb]'}`}
         >
           Efectivo
         </button>
         <button 
           onClick={() => setMethod('qr')}
-          className={`flex-1 pb-2 border-b-2 transition-all text-xs tracking-wide uppercase font-semibold ${method === 'qr' ? 'border-black text-black' : 'border-transparent text-[#888]'}`}
+          className={`flex-1 py-3 rounded-2xl transition-all text-xs tracking-wide uppercase font-bold shadow-sm ${method === 'qr' ? 'bg-[#E6007E] text-white shadow-[0_4px_15px_rgba(230,0,126,0.3)] scale-[1.02]' : 'bg-[#f5f5f5] text-[#888] hover:bg-[#ebebeb]'}`}
         >
           Pago QR
         </button>
       </div>
 
       {/* Numpad */}
-      <div className="flex-1 grid grid-cols-3 gap-y-2 px-8 pb-4">
+      <div className="flex-1 grid grid-cols-3 gap-y-2 gap-x-3 px-6 pb-1">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-          <button key={num} onClick={() => handlePress(num.toString())} className="h-16 text-2xl font-light text-black hover:bg-[#fafafa] active:bg-[#f0f0f0] transition-colors rounded">
+          <button key={num} onClick={() => handlePress(num.toString())} className="h-[60px] text-2xl font-medium text-[#002C6A] bg-white border border-[#f0f0f0] shadow-[0_2px_10px_rgba(0,0,0,0.03)] rounded-2xl hover:bg-[#f8f9fa] hover:border-[#3FB6DA]/30 active:scale-95 transition-all">
             {num}
           </button>
         ))}
         
-        {/* WOW Factor: Micrófono con IA */}
+        {/* Micrófono REAL */}
         <div className="flex items-center justify-center">
           <button 
             onClick={handleVoiceInput}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-black text-white animate-pulse scale-110 shadow-[0_0_20px_rgba(0,0,0,0.3)]' : 'bg-[#fafafa] text-black border border-[#ebebeb] hover:bg-[#f0f0f0]'}`}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isListening ? 'bg-gradient-to-r from-[#E6007E] to-[#ff47a6] text-white animate-pulse scale-110 shadow-[0_0_30px_rgba(230,0,126,0.6)]' : 'bg-white text-[#E6007E] border border-[#f0f0f0] shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-md hover:scale-105 active:scale-95'}`}
           >
-            <Mic size={20} />
+            <Mic size={22} strokeWidth={2.5} />
           </button>
         </div>
 
-        <button onClick={() => handlePress('0')} className="h-16 text-2xl font-light text-black hover:bg-[#fafafa] active:bg-[#f0f0f0] transition-colors rounded">
+        <button onClick={() => handlePress('0')} className="h-[60px] text-2xl font-medium text-[#002C6A] bg-white border border-[#f0f0f0] shadow-[0_2px_10px_rgba(0,0,0,0.03)] rounded-2xl hover:bg-[#f8f9fa] hover:border-[#3FB6DA]/30 active:scale-95 transition-all">
           0
         </button>
-        <button onClick={handleBackspace} className="h-16 flex items-center justify-center text-[#888] hover:bg-[#fafafa] active:bg-[#f0f0f0] transition-colors rounded">
-          <Delete size={20} strokeWidth={1.5} />
+        <button onClick={handleBackspace} className="h-[60px] flex items-center justify-center text-[#888] bg-white border border-[#f0f0f0] shadow-[0_2px_10px_rgba(0,0,0,0.03)] rounded-2xl hover:bg-[#fff0f5] hover:text-[#E6007E] active:scale-95 transition-all">
+          <Delete size={22} strokeWidth={2} />
         </button>
       </div>
 
       {/* Action */}
-      <div className="p-6 relative">
-        {/* Etiqueta flotante de IA cuando escucha */}
-        {isListening && (
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] uppercase tracking-widest px-4 py-2 rounded-full whitespace-nowrap animate-in slide-in-from-bottom-2">
-            Escuchando a Doña María...
+      <div className="px-6 pb-6 pt-1 relative">
+        {(isListening || voiceText) && (
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#002C6A] text-white text-[10px] font-bold uppercase tracking-widest px-5 py-2.5 rounded-full whitespace-nowrap animate-in slide-in-from-bottom-2 shadow-[0_10px_20px_rgba(0,44,106,0.3)] border border-[#3FB6DA]/30">
+            {voiceText || 'Escuchando...'}
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-[#002C6A]"></span>
           </div>
         )}
         <button 
           onClick={handleSave}
           disabled={amount === '0' || isListening}
-          className="w-full text-xs uppercase tracking-widest font-semibold h-14 rounded-none transition-colors disabled:bg-[#f5f5f5] disabled:text-[#a1a1a1] bg-black text-white hover:bg-[#222] disabled:cursor-not-allowed"
+          className="w-full text-[13px] uppercase tracking-[0.2em] font-bold h-14 rounded-2xl transition-all disabled:bg-[#f5f5f5] disabled:text-[#a1a1a1] disabled:shadow-none bg-gradient-to-r from-[#E6007E] to-[#c20068] text-white hover:opacity-90 disabled:cursor-not-allowed shadow-[0_10px_25px_rgba(230,0,126,0.35)] active:scale-[0.98]"
         >
-          Confirmar
+          Confirmar Cobro
         </button>
       </div>
     </div>

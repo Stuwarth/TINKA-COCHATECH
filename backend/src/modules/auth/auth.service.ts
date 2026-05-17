@@ -22,31 +22,41 @@ export class AuthService {
     );
   }
 
+  /**
+   * Login con phone + PIN
+   * Busca el usuario por teléfono y compara el PIN
+   */
   async login(loginDto: LoginDto) {
-    // Buscar usuario por email
+    // Buscar usuario por teléfono
     const { data: user, error } = await this.supabase
       .from('users')
       .select('*')
-      .eq('email', loginDto.email)
+      .eq('phone', loginDto.phone)
+      .eq('status', 'active')
       .single();
 
     if (error || !user) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Usuario no encontrado. Verifica tu número de teléfono.');
     }
 
-    // Verificar password
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password_hash,
-    );
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales inválidas');
+    // Comparar PIN
+    if (user.pin !== loginDto.pin) {
+      throw new UnauthorizedException('PIN incorrecto');
     }
 
+    // Buscar el negocio del usuario
+    const { data: business } = await this.supabase
+      .from('businesses')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single();
+
+    // Generar JWT
     const payload = {
-      email: user.email,
       sub: user.id,
+      email: user.email,
+      phone: user.phone,
     };
 
     return {
@@ -55,10 +65,19 @@ export class AuthService {
         id: user.id,
         email: user.email,
         full_name: user.full_name,
+        phone: user.phone,
       },
+      business: business ? {
+        id: business.id,
+        name: business.name,
+        category: business.category,
+      } : null,
     };
   }
 
+  /**
+   * Registro completo: crea usuario + negocio en Supabase
+   */
   async register(registerDto: RegisterDto) {
     try {
       // Hash del password con bcrypt
@@ -123,9 +142,11 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      // Construir el link de WhatsApp para activación
-      const whatsappLink = this.whatsappService.buildActivationLink(
-        activationToken,
+      // Enviar credenciales por WhatsApp (no bloquea si falla)
+      const whatsappLink = await this.whatsappService.sendCredentials(
+        registerDto.phone,
+        registerDto.email,
+        token,
         registerDto.business_name,
       );
 
@@ -139,7 +160,7 @@ export class AuthService {
           id: userData.id,
           email: registerDto.email,
           full_name: registerDto.full_name,
-          pin: registerDto.pin,
+          phone: registerDto.phone,
         },
         business: {
           id: businessData.id,
