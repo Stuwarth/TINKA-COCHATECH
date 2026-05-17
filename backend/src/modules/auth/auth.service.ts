@@ -50,7 +50,6 @@ export class AuthService {
       .from('businesses')
       .select('*')
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .single();
 
     // Generar JWT
@@ -72,7 +71,12 @@ export class AuthService {
         id: business.id,
         name: business.name,
         category: business.category,
+        status: business.status,
+        whatsapp_phone: business.whatsapp_phone,
       } : null,
+      whatsapp_link: (business && business.status === 'pending' && business.activation_token)
+        ? this.whatsappService.buildActivationLink(business.activation_token, business.name)
+        : null,
     };
   }
 
