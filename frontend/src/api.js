@@ -106,6 +106,16 @@ export const api = {
         },
         body: JSON.stringify(saleData),
       });
+      
+      if (response.ok) {
+        // Actualizar el balance localmente
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          user.current_balance = (Number(user.current_balance) || 0) + Number(saleData.amount);
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+      }
       return response.ok;
     } catch (error) {
       console.warn("Backend no conectado. Guardando venta localmente.");
@@ -113,6 +123,14 @@ export const api = {
       const sales = JSON.parse(localStorage.getItem('local_sales') || '[]');
       sales.unshift({ ...saleData, id: Date.now(), created_at: new Date().toISOString() });
       localStorage.setItem('local_sales', JSON.stringify(sales));
+      
+      // Actualizar balance localmente en fallback
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.current_balance = (Number(user.current_balance) || 0) + Number(saleData.amount);
+        localStorage.setItem('user', JSON.stringify(user));
+      }
       return true;
     }
   },
@@ -173,6 +191,44 @@ export const api = {
   getCurrentBusiness: () => {
     const business = localStorage.getItem('business');
     return business ? JSON.parse(business) : null;
+  },
+
+  // 11. Establecer Dinero Inicial
+  setInitialBalance: async (amount) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${API_URL}/auth/balance`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ initial_balance: Number(amount) }),
+      });
+      if (!response.ok) throw new Error('Error al actualizar balance');
+      const data = await response.json();
+      
+      // Actualizar localStorage con el nuevo balance
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.initial_balance = Number(amount);
+        user.current_balance = Number(amount); // se reinicia el actual
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      return data;
+    } catch (error) {
+      console.warn("Backend no conectado. Guardando balance localmente.");
+      // FALLBACK
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.initial_balance = Number(amount);
+        user.current_balance = Number(amount);
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      return true;
+    }
   },
 };
 

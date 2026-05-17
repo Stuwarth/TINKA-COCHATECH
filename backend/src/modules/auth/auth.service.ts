@@ -64,6 +64,8 @@ export class AuthService {
         email: user.email,
         full_name: user.full_name,
         phone: user.phone,
+        initial_balance: user.initial_balance,
+        current_balance: user.current_balance,
       },
       business: business ? {
         id: business.id,
@@ -90,6 +92,8 @@ export class AuthService {
             pin: registerDto.pin,
             role: 'entrepreneur',
             status: 'active',
+            initial_balance: 0,
+            current_balance: 0,
           },
         ])
         .select()
@@ -142,6 +146,8 @@ export class AuthService {
           email: registerDto.email,
           full_name: registerDto.full_name,
           phone: registerDto.phone,
+          initial_balance: userData.initial_balance,
+          current_balance: userData.current_balance,
         },
         business: {
           id: businessData.id,
@@ -158,6 +164,30 @@ export class AuthService {
       return this.jwtService.verify(token);
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  async updateBalance(userId: string, initialBalance: number) {
+    try {
+      // Calculamos la diferencia por si ya había ventas (opcional, pero lo más simple es resetear o setear la base).
+      // Lo más sencillo: El current_balance se actualiza en la base de la diferencia, pero por ahora solo actualizamos ambos a initial_balance (asumiendo que inicia su turno).
+      const { data, error } = await this.supabase
+        .from('users')
+        .update({
+          initial_balance: initialBalance,
+          current_balance: initialBalance,
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Error al actualizar balance: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      throw new Error(`Error en updateBalance: ${error.message}`);
     }
   }
 }

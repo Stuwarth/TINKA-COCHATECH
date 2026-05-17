@@ -6,6 +6,7 @@ export default function Dashboard({ balance, transactions, userName, businessNam
   const [summary, setSummary] = useState(null);
   const [todaySales, setTodaySales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadedFromBackend, setLoadedFromBackend] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -19,15 +20,19 @@ export default function Dashboard({ balance, transactions, userName, businessNam
       if (summaryData) setSummary(summaryData);
 
       const salesData = await api.getSales();
-      if (salesData && salesData.length > 0) setTodaySales(salesData);
+      if (salesData) {
+        setTodaySales(salesData);
+        setLoadedFromBackend(true);
+      }
     } catch (e) {
       console.warn('Usando datos locales');
+      setLoadedFromBackend(false);
     }
     setLoading(false);
   };
 
   // Usar datos del backend si existen, sino los props/localStorage
-  const displayTransactions = todaySales.length > 0
+  const displayTransactions = loadedFromBackend
     ? todaySales.map(s => ({
         id: s.id,
         prod: s.product_name || s.prod || 'Venta',
@@ -37,7 +42,15 @@ export default function Dashboard({ balance, transactions, userName, businessNam
       }))
     : transactions;
 
-  const totalBalance = summary?.total_week || balance || displayTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+  // Si cargó del backend, el balance total debe venir del resumen o ser 0 si no hay nada,
+  // no debe caer en el "balance" del localStorage si el real es 0
+  const userObj = api.getCurrentUser();
+  const dbBalance = userObj && userObj.current_balance !== undefined ? Number(userObj.current_balance) : (summary?.total_week ?? 0);
+
+  const totalBalance = loadedFromBackend
+    ? dbBalance
+    : (balance || displayTransactions.reduce((sum, t) => sum + (t.amount || 0), 0));
+
   const percentageUp = summary?.percentage_up || 0;
   const healthStatus = summary?.health_status || 'Bueno';
 
