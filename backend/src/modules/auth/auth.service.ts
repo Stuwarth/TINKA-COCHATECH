@@ -1,13 +1,16 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { createClient } from '@supabase/supabase-js';
 import { WhatsappService } from '../../common/services/whatsapp.service';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
   private supabase;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly jwtService: JwtService,
@@ -15,7 +18,7 @@ export class AuthService {
   ) {
     this.supabase = createClient(
       process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_KEY || '',
+      process.env.SUPABASE_ANON_KEY || '',
     );
   }
 
@@ -32,11 +35,21 @@ export class AuthService {
       .eq('status', 'active');
 
     if (error || !users || users.length === 0) {
-      throw new UnauthorizedException('Usuario no encontrado. Verifica tu número de teléfono.');
+      throw new UnauthorizedException(
+        'Usuario no encontrado. Verifica tu número de teléfono.',
+      );
     }
 
-    // Comparar PIN entre los usuarios encontrados (en caso de haber números duplicados)
-    const user = users.find((u: any) => u.pin === loginDto.pin);
+    // Comparar PIN cifrado entre los usuarios encontrados (en caso de haber números duplicados)
+    const matchedUsers = await Promise.all(
+      users.map(async (user: any) => ({
+        user,
+        isValidPin: await bcrypt.compare(loginDto.pin, user.pin),
+      })),
+    );
+
+    const userEntry = matchedUsers.find((entry) => entry.isValidPin);
+    const user = userEntry?.user;
 
     if (!user) {
       throw new UnauthorizedException('PIN incorrecto');
@@ -47,7 +60,6 @@ export class AuthService {
       .from('businesses')
       .select('*')
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .single();
 
     // Generar JWT
@@ -67,11 +79,22 @@ export class AuthService {
         initial_balance: user.initial_balance,
         current_balance: user.current_balance,
       },
-      business: business ? {
-        id: business.id,
-        name: business.name,
-        category: business.category,
-      } : null,
+      business: business
+        ? {
+            id: business.id,
+            name: business.name,
+            category: business.category,
+            status: business.status,
+            whatsapp_phone: business.whatsapp_phone,
+          }
+        : null,
+      whatsapp_link:
+        business && business.status === 'pending' && business.activation_token
+          ? this.whatsappService.buildActivationLink(
+              business.activation_token,
+              business.name,
+            )
+          : null,
     };
   }
 
@@ -80,6 +103,11 @@ export class AuthService {
    */
   async register(registerDto: RegisterDto) {
     try {
+      // Hash del password y del PIN con bcrypt
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(registerDto.password, saltRounds);
+      const pinHash = await bcrypt.hash(registerDto.pin, saltRounds);
+
       // Crear usuario en Supabase
       const { data: userData, error: userError } = await this.supabase
         .from('users')
@@ -87,9 +115,9 @@ export class AuthService {
           {
             email: registerDto.email,
             full_name: registerDto.full_name,
-            password_hash: registerDto.password, // TODO: Hash contraseña
+            password_hash: passwordHash,
             phone: registerDto.phone,
-            pin: registerDto.pin,
+            pin: pinHash,
             role: 'entrepreneur',
             status: 'active',
             initial_balance: 0,
@@ -100,10 +128,16 @@ export class AuthService {
         .single();
 
       if (userError) {
+        this.logger.error(`Error creando usuario: ${userError.message}`);
         throw userError;
       }
 
-      // Crear el negocio del usuario
+      // Generar token de activación para vincular WhatsApp
+      const activationToken = crypto.randomUUID().slice(0, 8).toUpperCase();
+      const activationExpiresAt = new Date();
+      activationExpiresAt.setHours(activationExpiresAt.getHours() + 24);
+
+      // Crear el negocio con status 'pending' (se activa al vincular WhatsApp)
       const { data: businessData, error: businessError } = await this.supabase
         .from('businesses')
         .insert([
@@ -113,13 +147,16 @@ export class AuthService {
             description: registerDto.description,
             category: registerDto.category,
             phone: registerDto.phone,
-            status: 'active',
+            activation_token: activationToken,
+            activation_expires_at: activationExpiresAt.toISOString(),
+            status: 'pending',
           },
         ])
         .select()
         .single();
 
       if (businessError) {
+        this.logger.error(`Error creando negocio: ${businessError.message}`);
         throw businessError;
       }
 
@@ -131,12 +168,25 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      // Enviar credenciales por WhatsApp (no bloquea si falla)
-      await this.whatsappService.sendCredentials(
-        registerDto.phone,
-        registerDto.email,
-        token,
+      // Construir el enlace de activación de WhatsApp
+      const whatsappLink = this.whatsappService.buildActivationLink(
+        activationToken,
         registerDto.business_name,
+      );
+
+      // Enviar mensaje de bienvenida y activación por WhatsApp (no bloquea si falla)
+      const welcomeMessage =
+        `¡Hola ${registerDto.full_name}! 👋\n\n` +
+        `¡Gracias por registrarte en Tinka! Tu negocio *${registerDto.business_name}* ha sido creado con éxito. 🚀\n\n` +
+        `Para activar tu integración de WhatsApp y comenzar a registrar tus ventas con Inteligencia Artificial, por favor haz clic en el siguiente enlace y envía el mensaje de activación:\n\n` +
+        `👉 ${whatsappLink}\n\n` +
+        `O si prefieres, envía directamente el siguiente mensaje al bot:\n` +
+        `*ACTIVAR:${activationToken}:${registerDto.business_name}*`;
+
+      await this.whatsappService.sendMessage(registerDto.phone, welcomeMessage);
+
+      this.logger.log(
+        `Negocio registrado: ${registerDto.business_name} | Token: ${activationToken} | Link: ${whatsappLink}`,
       );
 
       return {
@@ -152,17 +202,21 @@ export class AuthService {
         business: {
           id: businessData.id,
           name: registerDto.business_name,
+          status: 'pending',
+          activation_token: activationToken,
         },
+        whatsapp_link: whatsappLink,
       };
-    } catch (error) {
-      throw new Error(`Error en registro: ${error.message}`);
+    } catch (err: any) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error en registro: ${message}`);
     }
   }
 
   validateToken(token: string) {
     try {
       return this.jwtService.verify(token);
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
   }
@@ -186,8 +240,9 @@ export class AuthService {
       }
 
       return data;
-    } catch (error) {
-      throw new Error(`Error en updateBalance: ${error.message}`);
+    } catch (err: any) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error en updateBalance: ${message}`);
     }
   }
 }

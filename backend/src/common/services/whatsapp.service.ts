@@ -1,63 +1,274 @@
 import { Injectable, Logger } from '@nestjs/common';
-import twilio from 'twilio';
 
 @Injectable()
 export class WhatsappService {
-  private twilioClient;
   private readonly logger = new Logger(WhatsappService.name);
+  private readonly graphApiUrl: string;
+  private readonly accessToken: string;
+  private readonly botPhone: string;
 
   constructor() {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
+    this.botPhone = process.env.WHATSAPP_BOT_PHONE || '';
+    this.graphApiUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
 
-    if (!accountSid || !authToken || !twilioPhoneNumber) {
+    if (!phoneNumberId || !this.accessToken) {
       this.logger.warn(
-        'Credenciales de Twilio no configuradas. Los mensajes de WhatsApp no se enviarán.',
+        'Credenciales de WhatsApp (Meta) no configuradas. Los mensajes no se enviarán.',
       );
     }
-
-    this.twilioClient = twilio(accountSid, authToken);
   }
 
+  /**
+   * Envía credenciales por WhatsApp
+   * @param phone Número de teléfono
+   * @param email Email del usuario
+   * @param token Token JWT
+   * @param businessName Nombre del negocio
+   */
   async sendCredentials(
-    whatsappNumber: string,
-    userEmail: string,
+    phone: string,
+    email: string,
     token: string,
     businessName: string,
-  ): Promise<void> {
+  ): Promise<string> {
     try {
-      const message = `
-🎉 *¡Registrado exitosamente en TINKA!*
+      const message = `🎉 ¡Bienvenido a TINKA, ${businessName}!\n\nTus credenciales:\nEmail: ${email}\nToken: ${token}\n\nAccede a: https://tinka.app`;
+      await this.sendMessage(phone, message);
+      return this.buildActivationLink('activation', businessName);
+    } catch (error) {
+      this.logger.error(`Error enviando credenciales: ${error.message}`);
+      return this.buildActivationLink('activation', businessName);
+    }
+  }
 
-Hola! Tu negocio "${businessName}" ha sido registrado exitosamente.
+  /**
+   * Envía un mensaje de texto por WhatsApp usando la Meta Cloud API.
+   * @param to Número del destinatario con código de país (ej: "59170000000")
+   * @param body Texto del mensaje
+   */
+  async sendMessage(to: string, body: string): Promise<void> {
+    try {
+      // Limpiar el número: solo dígitos
+      const cleanPhone = to.replace(/\D/g, '');
 
-📧 *Email:* ${userEmail}
-🔐 *Token de acceso:* ${token}
-
-⚠️ Guarda este token en un lugar seguro.
-
-Accede a la aplicación: https://tinka.app
-
-¡Bienvenido a TINKA! 🚀
-      `.trim();
-
-      const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
-
-      await this.twilioClient.messages.create({
-        from: `whatsapp:${twilioPhoneNumber}`,
-        to: `whatsapp:+591${whatsappNumber}`,
-        body: message,
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: cleanPhone,
+          type: 'text',
+          text: { body },
+        }),
       });
 
-      this.logger.log(`Credenciales enviadas a WhatsApp: +591${whatsappNumber}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.error(`Error Meta API: ${JSON.stringify(errorData)}`);
+        throw new Error(`WhatsApp send failed: ${response.status}`);
+      }
+
+      this.logger.log(`Mensaje enviado a ${cleanPhone}`);
     } catch (error) {
       this.logger.error(
         `Error al enviar mensaje de WhatsApp: ${error.message}`,
         error.stack,
       );
-      // No lanzar el error para no interrumpir el flujo de registro
+      // No lanzar el error para no interrumpir el flujo principal
     }
   }
-}
 
+  /**
+   * Descarga un archivo multimedia de WhatsApp (audio, imagen, etc).
+   * Paso 1: Obtener la URL del media con el media_id.
+   * Paso 2: Descargar el archivo binario.
+   * @param mediaId ID del medio proporcionado por el webhook
+   * @returns Buffer con el contenido del archivo
+   */
+  async downloadMedia(mediaId: string): Promise<Buffer> {
+    // Paso 1: Obtener URL del media
+    const mediaInfoResponse = await fetch(
+      `https://graph.facebook.com/v21.0/${mediaId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      },
+    );
+
+    if (!mediaInfoResponse.ok) {
+      throw new Error(
+        `Error al obtener info del media: ${mediaInfoResponse.status}`,
+      );
+    }
+
+    const mediaInfo = await mediaInfoResponse.json();
+    const mediaUrl = mediaInfo.url;
+
+    // Paso 2: Descargar el archivo binario
+    const mediaResponse = await fetch(mediaUrl, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+    });
+
+    if (!mediaResponse.ok) {
+      throw new Error(`Error al descargar media: ${mediaResponse.status}`);
+    }
+
+    const arrayBuffer = await mediaResponse.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  /**
+   * Envía un mensaje con botones interactivos (hasta 3 botones).
+   */
+  async sendButtonsMessage(
+    to: string,
+    body: string,
+    options: string[],
+  ): Promise<void> {
+    try {
+      const cleanPhone = to.replace(/\D/g, '');
+      const buttons = options.slice(0, 3).map((option, index) => ({
+        type: 'reply' as const,
+        reply: {
+          id: `btn_${index + 1}`,
+          title: option.slice(0, 20),
+        },
+      }));
+
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: cleanPhone,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: { text: body },
+            action: { buttons },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.error(
+          `Error Meta API (botones): ${JSON.stringify(errorData)}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error al enviar mensaje interactivo con botones: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Envía un menú interactivo con una lista de opciones (hasta 10 elementos).
+   */
+  async sendMenuMessage(
+    to: string,
+    body: string,
+    buttonTitle: string,
+    items: Array<{ id: string; title: string; description?: string }>,
+  ): Promise<void> {
+    try {
+      const cleanPhone = to.replace(/\D/g, '');
+      const rows = items.slice(0, 10).map((item) => ({
+        id: item.id,
+        title: item.title.slice(0, 24),
+        description: item.description?.slice(0, 72) ?? '',
+      }));
+
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: cleanPhone,
+          type: 'interactive',
+          interactive: {
+            type: 'list',
+            body: { text: body },
+            action: {
+              button: buttonTitle,
+              sections: [
+                {
+                  title: 'Opciones disponibles',
+                  rows,
+                },
+              ],
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.error(
+          `Error Meta API (lista): ${JSON.stringify(errorData)}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error al enviar mensaje de lista interactiva: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Marca un mensaje como leído para mostrar los ticks azules.
+   */
+  async markAsRead(messageId: string): Promise<void> {
+    try {
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          status: 'read',
+          message_id: messageId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.debug(
+          `Error Meta API (marcar leído): ${JSON.stringify(errorData)}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error al marcar mensaje como leído: ${error.message}`);
+    }
+  }
+
+  /**
+   * Construye el link wa.me con mensaje pre-llenado para activar un negocio.
+   * El usuario abre este link → WhatsApp se abre → él envía el mensaje.
+   * @param activationToken Token de activación del negocio
+   * @param businessName Nombre del negocio
+   * @returns URL completa de wa.me
+   */
+  buildActivationLink(activationToken: string, businessName: string): string {
+    const message = `ACTIVAR:${activationToken}:${businessName}`;
+    const encodedMessage = encodeURIComponent(message);
+    return `https://wa.me/${this.botPhone}?text=${encodedMessage}`;
+  }
+}

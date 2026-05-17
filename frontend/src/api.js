@@ -2,6 +2,26 @@
 // Conexión con Backend NestJS
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  const businessStr = localStorage.getItem('business');
+  const business = businessStr ? JSON.parse(businessStr) : null;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+  if (business?.id) {
+    headers['x-business-id'] = business.id;
+  }
+  return headers;
+};
+
+const getSalesKey = () => {
+  const businessStr = localStorage.getItem('business');
+  const business = businessStr ? JSON.parse(businessStr) : null;
+  return business?.id ? `local_sales_${business.id}` : 'local_sales_guest';
+};
+
 export const api = {
   // 1. Login con teléfono + PIN
   login: async (phone, pin) => {
@@ -19,7 +39,10 @@ export const api = {
       // Guardar token y datos de usuario
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      if (data.business) localStorage.setItem('business', JSON.stringify(data.business));
+      if (data.business) {
+        const businessObj = { ...data.business, whatsapp_link: data.whatsapp_link };
+        localStorage.setItem('business', JSON.stringify(businessObj));
+      }
       return data;
     } catch (error) {
       console.warn("Backend no conectado. Usando modo offline.");
@@ -52,7 +75,10 @@ export const api = {
       const data = await response.json();
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      if (data.business) localStorage.setItem('business', JSON.stringify(data.business));
+      if (data.business) {
+        const businessObj = { ...data.business, whatsapp_link: data.whatsapp_link };
+        localStorage.setItem('business', JSON.stringify(businessObj));
+      }
       return data;
     } catch (error) {
       console.warn("Backend no conectado. Guardando registro localmente.");
@@ -81,10 +107,9 @@ export const api = {
 
   // 3. Obtener resumen del Dashboard
   getSummary: async () => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch(`${API_URL}/sales/summary`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Error al conectar');
       return await response.json();
@@ -96,14 +121,10 @@ export const api = {
 
   // 4. Registrar Nueva Venta
   createSale: async (saleData) => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch(`${API_URL}/sales`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(saleData),
       });
       
@@ -119,10 +140,11 @@ export const api = {
       return response.ok;
     } catch (error) {
       console.warn("Backend no conectado. Guardando venta localmente.");
-      // FALLBACK: guardar venta en localStorage
-      const sales = JSON.parse(localStorage.getItem('local_sales') || '[]');
+      // FALLBACK: guardar venta en localStorage de forma aislada
+      const key = getSalesKey();
+      const sales = JSON.parse(localStorage.getItem(key) || '[]');
       sales.unshift({ ...saleData, id: Date.now(), created_at: new Date().toISOString() });
-      localStorage.setItem('local_sales', JSON.stringify(sales));
+      localStorage.setItem(key, JSON.stringify(sales));
       
       // Actualizar balance localmente en fallback
       const userStr = localStorage.getItem('user');
@@ -137,28 +159,23 @@ export const api = {
 
   // 5. Obtener ventas
   getSales: async () => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch(`${API_URL}/sales`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Error');
       return await response.json();
     } catch (error) {
-      return JSON.parse(localStorage.getItem('local_sales') || '[]');
+      return JSON.parse(localStorage.getItem(getSalesKey()) || '[]');
     }
   },
 
   // 6. Chat con Coach IA
   chatWithCoach: async (message) => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch(`${API_URL}/coach/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ message }),
       });
       const data = await response.json();
@@ -187,47 +204,21 @@ export const api = {
     return user ? JSON.parse(user) : null;
   },
 
-  // 10. Obtener datos del negocio actual
   getCurrentBusiness: () => {
     const business = localStorage.getItem('business');
     return business ? JSON.parse(business) : null;
   },
 
-  // 11. Establecer Dinero Inicial
-  setInitialBalance: async (amount) => {
-    const token = localStorage.getItem('token');
+  // 11. Obtener los negocios del usuario del backend
+  getMyBusinesses: async () => {
     try {
-      const response = await fetch(`${API_URL}/auth/balance`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ initial_balance: Number(amount) }),
+      const response = await fetch(`${API_URL}/businesses`, {
+        headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error('Error al actualizar balance');
-      const data = await response.json();
-      
-      // Actualizar localStorage con el nuevo balance
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        user.initial_balance = Number(amount);
-        user.current_balance = Number(amount); // se reinicia el actual
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-      return data;
+      if (!response.ok) throw new Error('Error');
+      return await response.json();
     } catch (error) {
-      console.warn("Backend no conectado. Guardando balance localmente.");
-      // FALLBACK
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        user.initial_balance = Number(amount);
-        user.current_balance = Number(amount);
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-      return true;
+      return null;
     }
   },
 };

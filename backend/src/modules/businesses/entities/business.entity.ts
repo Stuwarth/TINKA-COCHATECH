@@ -6,7 +6,10 @@ export class Business {
   category?: string;
   phone?: string;
   location?: string;
-  status: string;
-  created_at?: Date;
-  updated_at?: Date;
+  whatsapp_phone?: string;
+  activation_token?: string;
+  activation_expires_at?: string;
+  status?: 'pending' | 'active' | 'suspended' | string;
+  created_at?: string | Date;
+  updated_at?: string | Date;
 }

@@ -25,7 +25,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = (exceptionResponse as any).message || message;
         error = (exceptionResponse as any).error || error;
       } else {
-        message = exceptionResponse as string;
+        message = exceptionResponse;
       }
     } else if (exception instanceof BadRequestException) {
       status = HttpStatus.BAD_REQUEST;
@@ -43,4 +43,3 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
   }
 }
-

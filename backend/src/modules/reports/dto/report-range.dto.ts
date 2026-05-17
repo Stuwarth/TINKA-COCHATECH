@@ -10,4 +10,3 @@ export class ReportRangeDto {
   @IsOptional()
   userId?: string;
 }
-
