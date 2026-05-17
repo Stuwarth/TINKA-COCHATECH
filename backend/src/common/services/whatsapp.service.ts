@@ -21,6 +21,29 @@ export class WhatsappService {
   }
 
   /**
+   * Envía credenciales por WhatsApp
+   * @param phone Número de teléfono
+   * @param email Email del usuario
+   * @param token Token JWT
+   * @param businessName Nombre del negocio
+   */
+  async sendCredentials(
+    phone: string,
+    email: string,
+    token: string,
+    businessName: string,
+  ): Promise<string> {
+    try {
+      const message = `🎉 ¡Bienvenido a TINKA, ${businessName}!\n\nTus credenciales:\nEmail: ${email}\nToken: ${token}\n\nAccede a: https://tinka.app`;
+      await this.sendMessage(phone, message);
+      return this.buildActivationLink('activation', businessName);
+    } catch (error) {
+      this.logger.error(`Error enviando credenciales: ${error.message}`);
+      return this.buildActivationLink('activation', businessName);
+    }
+  }
+
+  /**
    * Envía un mensaje de texto por WhatsApp usando la Meta Cloud API.
    * @param to Número del destinatario con código de país (ej: "59170000000")
    * @param body Texto del mensaje

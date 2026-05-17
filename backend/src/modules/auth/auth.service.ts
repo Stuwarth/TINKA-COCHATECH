@@ -29,17 +29,28 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     // Buscar usuario por teléfono
     const { data: users, error } = await this.supabase
+    const { data: users, error } = await this.supabase
       .from('users')
       .select('*')
       .eq('phone', loginDto.phone)
       .eq('status', 'active');
+      .eq('status', 'active');
 
+    if (error || !users || users.length === 0) {
     if (error || !users || users.length === 0) {
       throw new UnauthorizedException('Usuario no encontrado. Verifica tu número de teléfono.');
     }
 
-    // Comparar PIN entre los usuarios encontrados (en caso de haber números duplicados)
-    const user = users.find((u: any) => u.pin === loginDto.pin);
+    // Comparar PIN cifrado entre los usuarios encontrados (en caso de haber números duplicados)
+    const matchedUsers = await Promise.all(
+      users.map(async (user: any) => ({
+        user,
+        isValidPin: await bcrypt.compare(loginDto.pin, user.pin),
+      })),
+    );
+
+    const userEntry = matchedUsers.find((entry) => entry.isValidPin);
+    const user = userEntry?.user;
 
     if (!user) {
       throw new UnauthorizedException('PIN incorrecto');
@@ -86,10 +97,11 @@ export class AuthService {
    * Registro completo: crea usuario + negocio en Supabase
    */
   async register(registerDto: RegisterDto) {
-    try {
-      // Hash del password con bcrypt
+        try {
+      // Hash del password y del PIN con bcrypt
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(registerDto.password, saltRounds);
+      const pinHash = await bcrypt.hash(registerDto.pin, saltRounds);
 
       // Crear usuario en Supabase
       const { data: userData, error: userError } = await this.supabase
@@ -100,7 +112,7 @@ export class AuthService {
             full_name: registerDto.full_name,
             password_hash: passwordHash,
             phone: registerDto.phone,
-            pin: registerDto.pin,
+            pin: pinHash,
             role: 'entrepreneur',
             status: 'active',
             initial_balance: 0,
@@ -151,6 +163,11 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
+      // Enviar credenciales por WhatsApp (no bloquea si falla)
+      const whatsappLink = await this.whatsappService.sendCredentials(
+        registerDto.phone,
+        registerDto.email,
+        token,
       // Construir el enlace de activación de WhatsApp
       const whatsappLink = this.whatsappService.buildActivationLink(
         activationToken,
