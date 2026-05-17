@@ -1,7 +1,7 @@
 {
   "name": "Tinka",
   "short_name": "Tinka",
-  "description": "Tinka - punto de venta móvil",
+  "description": "Tinka - punto de venta movil",
   "lang": "es-BO",
   "start_url": "/",
   "scope": "/",
@@ -10,21 +10,21 @@
   "theme_color": "#002C6A",
   "icons": [
     {
-      "src": "favicon.ico.",
+      "src": "favicon.ico",
       "sizes": "192x192",
-      "type": "image/ico",
+      "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "favicon.ico",
       "sizes": "512x512",
-      "type": "image/ico",
+      "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "favicon.ico",
       "sizes": "512x512",
-      "type": "image/ico",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
