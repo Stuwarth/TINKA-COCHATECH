@@ -12,4 +12,3 @@ export class ListSalesDto {
   @IsOptional()
   limit?: number;
 }
-

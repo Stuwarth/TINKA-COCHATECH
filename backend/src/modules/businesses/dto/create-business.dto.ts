@@ -21,4 +21,3 @@ export class CreateBusinessDto {
   @IsOptional()
   location?: string;
 }
-

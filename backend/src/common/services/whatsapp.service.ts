@@ -56,7 +56,7 @@ export class WhatsappService {
       const response = await fetch(this.graphApiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -96,13 +96,15 @@ export class WhatsappService {
       `https://graph.facebook.com/v21.0/${mediaId}`,
       {
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
         },
       },
     );
 
     if (!mediaInfoResponse.ok) {
-      throw new Error(`Error al obtener info del media: ${mediaInfoResponse.status}`);
+      throw new Error(
+        `Error al obtener info del media: ${mediaInfoResponse.status}`,
+      );
     }
 
     const mediaInfo = await mediaInfoResponse.json();
@@ -111,7 +113,7 @@ export class WhatsappService {
     // Paso 2: Descargar el archivo binario
     const mediaResponse = await fetch(mediaUrl, {
       headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
       },
     });
 
@@ -144,7 +146,7 @@ export class WhatsappService {
       const response = await fetch(this.graphApiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -161,10 +163,14 @@ export class WhatsappService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        this.logger.error(`Error Meta API (botones): ${JSON.stringify(errorData)}`);
+        this.logger.error(
+          `Error Meta API (botones): ${JSON.stringify(errorData)}`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Error al enviar mensaje interactivo con botones: ${error.message}`);
+      this.logger.error(
+        `Error al enviar mensaje interactivo con botones: ${error.message}`,
+      );
     }
   }
 
@@ -188,7 +194,7 @@ export class WhatsappService {
       const response = await fetch(this.graphApiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -213,10 +219,14 @@ export class WhatsappService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        this.logger.error(`Error Meta API (lista): ${JSON.stringify(errorData)}`);
+        this.logger.error(
+          `Error Meta API (lista): ${JSON.stringify(errorData)}`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Error al enviar mensaje de lista interactiva: ${error.message}`);
+      this.logger.error(
+        `Error al enviar mensaje de lista interactiva: ${error.message}`,
+      );
     }
   }
 
@@ -228,7 +238,7 @@ export class WhatsappService {
       const response = await fetch(this.graphApiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -240,7 +250,9 @@ export class WhatsappService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        this.logger.debug(`Error Meta API (marcar leído): ${JSON.stringify(errorData)}`);
+        this.logger.debug(
+          `Error Meta API (marcar leído): ${JSON.stringify(errorData)}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error al marcar mensaje como leído: ${error.message}`);

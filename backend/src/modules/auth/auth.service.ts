@@ -29,16 +29,15 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     // Buscar usuario por teléfono
     const { data: users, error } = await this.supabase
-    const { data: users, error } = await this.supabase
       .from('users')
       .select('*')
       .eq('phone', loginDto.phone)
       .eq('status', 'active');
-      .eq('status', 'active');
 
     if (error || !users || users.length === 0) {
-    if (error || !users || users.length === 0) {
-      throw new UnauthorizedException('Usuario no encontrado. Verifica tu número de teléfono.');
+      throw new UnauthorizedException(
+        'Usuario no encontrado. Verifica tu número de teléfono.',
+      );
     }
 
     // Comparar PIN cifrado entre los usuarios encontrados (en caso de haber números duplicados)
@@ -80,16 +79,22 @@ export class AuthService {
         initial_balance: user.initial_balance,
         current_balance: user.current_balance,
       },
-      business: business ? {
-        id: business.id,
-        name: business.name,
-        category: business.category,
-        status: business.status,
-        whatsapp_phone: business.whatsapp_phone,
-      } : null,
-      whatsapp_link: (business && business.status === 'pending' && business.activation_token)
-        ? this.whatsappService.buildActivationLink(business.activation_token, business.name)
+      business: business
+        ? {
+            id: business.id,
+            name: business.name,
+            category: business.category,
+            status: business.status,
+            whatsapp_phone: business.whatsapp_phone,
+          }
         : null,
+      whatsapp_link:
+        business && business.status === 'pending' && business.activation_token
+          ? this.whatsappService.buildActivationLink(
+              business.activation_token,
+              business.name,
+            )
+          : null,
     };
   }
 
@@ -97,7 +102,7 @@ export class AuthService {
    * Registro completo: crea usuario + negocio en Supabase
    */
   async register(registerDto: RegisterDto) {
-        try {
+    try {
       // Hash del password y del PIN con bcrypt
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(registerDto.password, saltRounds);
@@ -163,11 +168,6 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      // Enviar credenciales por WhatsApp (no bloquea si falla)
-      const whatsappLink = await this.whatsappService.sendCredentials(
-        registerDto.phone,
-        registerDto.email,
-        token,
       // Construir el enlace de activación de WhatsApp
       const whatsappLink = this.whatsappService.buildActivationLink(
         activationToken,
@@ -175,7 +175,8 @@ export class AuthService {
       );
 
       // Enviar mensaje de bienvenida y activación por WhatsApp (no bloquea si falla)
-      const welcomeMessage = `¡Hola ${registerDto.full_name}! 👋\n\n` +
+      const welcomeMessage =
+        `¡Hola ${registerDto.full_name}! 👋\n\n` +
         `¡Gracias por registrarte en Tinka! Tu negocio *${registerDto.business_name}* ha sido creado con éxito. 🚀\n\n` +
         `Para activar tu integración de WhatsApp y comenzar a registrar tus ventas con Inteligencia Artificial, por favor haz clic en el siguiente enlace y envía el mensaje de activación:\n\n` +
         `👉 ${whatsappLink}\n\n` +
@@ -206,15 +207,16 @@ export class AuthService {
         },
         whatsapp_link: whatsappLink,
       };
-    } catch (error) {
-      throw new Error(`Error en registro: ${error.message}`);
+    } catch (err: any) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error en registro: ${message}`);
     }
   }
 
   validateToken(token: string) {
     try {
       return this.jwtService.verify(token);
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
   }
@@ -238,8 +240,9 @@ export class AuthService {
       }
 
       return data;
-    } catch (error) {
-      throw new Error(`Error en updateBalance: ${error.message}`);
+    } catch (err: any) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error en updateBalance: ${message}`);
     }
   }
 }

@@ -91,7 +91,11 @@ export class SalesService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return this.listSales(today.toISOString(), tomorrow.toISOString(), businessId);
+    return this.listSales(
+      today.toISOString(),
+      tomorrow.toISOString(),
+      businessId,
+    );
   }
 
   async getSalesLastWeek(businessId?: string): Promise<Sale[]> {
@@ -99,7 +103,11 @@ export class SalesService {
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    return this.listSales(weekAgo.toISOString(), today.toISOString(), businessId);
+    return this.listSales(
+      weekAgo.toISOString(),
+      today.toISOString(),
+      businessId,
+    );
   }
 
   async getTotalSales(

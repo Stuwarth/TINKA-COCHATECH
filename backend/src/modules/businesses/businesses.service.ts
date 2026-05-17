@@ -141,7 +141,10 @@ export class BusinessesService {
    * Activa un negocio vinculando un número de WhatsApp.
    * Cambia status a 'active' y guarda el número.
    */
-  async activateBusiness(businessId: string, whatsappPhone: string): Promise<Business> {
+  async activateBusiness(
+    businessId: string,
+    whatsappPhone: string,
+  ): Promise<Business> {
     const cleanPhone = whatsappPhone.replace(/\D/g, '');
 
     const { data, error } = await this.supabase
@@ -162,7 +165,9 @@ export class BusinessesService {
       throw error;
     }
 
-    this.logger.log(`Negocio ${businessId} activado con WhatsApp: ${cleanPhone}`);
+    this.logger.log(
+      `Negocio ${businessId} activado con WhatsApp: ${cleanPhone}`,
+    );
     return data;
   }
 }

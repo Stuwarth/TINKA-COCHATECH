@@ -22,4 +22,3 @@ export function getDayName(date: Date): string {
   const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   return days[date.getDay()];
 }
-

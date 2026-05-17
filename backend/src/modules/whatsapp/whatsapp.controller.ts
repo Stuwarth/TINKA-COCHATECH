@@ -15,9 +15,7 @@ import { WhatsappWebhookService } from './services/whatsapp-webhook.service';
 export class WhatsappController {
   private readonly logger = new Logger(WhatsappController.name);
 
-  constructor(
-    private readonly webhookService: WhatsappWebhookService,
-  ) {}
+  constructor(private readonly webhookService: WhatsappWebhookService) {}
 
   /**
    * GET /webhook/whatsapp

@@ -1,4 +1,11 @@
-import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,4 +31,3 @@ export class BusinessesController {
     return this.businessesService.getBusinessesByUser(userId);
   }
 }
-

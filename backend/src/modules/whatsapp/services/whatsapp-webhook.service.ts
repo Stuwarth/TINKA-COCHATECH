@@ -31,7 +31,9 @@ export class WhatsappWebhookService {
     senderName?: string,
   ): Promise<void> {
     const cleanPhone = senderPhone.replace(/\D/g, '');
-    this.logger.log(`Mensaje recibido de ${cleanPhone} | Tipo: ${message.type}`);
+    this.logger.log(
+      `Mensaje recibido de ${cleanPhone} | Tipo: ${message.type}`,
+    );
 
     // Marcar como leído inmediatamente para mejorar la UX
     this.whatsappService.markAsRead(message.id).catch(() => {});
@@ -43,7 +45,8 @@ export class WhatsappWebhookService {
     }
 
     // === PASO 2: ¿El número está vinculado a un negocio? ===
-    const business = await this.businessesService.findByWhatsAppPhone(cleanPhone);
+    const business =
+      await this.businessesService.findByWhatsAppPhone(cleanPhone);
 
     if (!business) {
       this.logger.warn(`Número no registrado: ${cleanPhone}`);
@@ -61,7 +64,10 @@ export class WhatsappWebhookService {
   /**
    * Maneja el flujo de activación: ACTIVAR:token:NombreNegocio
    */
-  private async handleActivation(phone: string, messageText: string): Promise<void> {
+  private async handleActivation(
+    phone: string,
+    messageText: string,
+  ): Promise<void> {
     try {
       // Parsear: ACTIVAR:ABC12345:Mi Negocio
       const parts = messageText.split(':');
@@ -77,7 +83,8 @@ export class WhatsappWebhookService {
       this.logger.log(`Intento de activación: token=${token} phone=${phone}`);
 
       // Buscar negocio por token
-      const business = await this.businessesService.findByActivationToken(token);
+      const business =
+        await this.businessesService.findByActivationToken(token);
 
       if (!business) {
         await this.whatsappService.sendMessage(
@@ -105,15 +112,17 @@ export class WhatsappWebhookService {
       await this.whatsappService.sendMessage(
         phone,
         `✅ *¡Negocio vinculado exitosamente!*\n\n` +
-        `📍 *Negocio:* ${business.name}\n` +
-        `📱 *WhatsApp:* Este número\n\n` +
-        `Ahora puedes registrar ventas enviándome:\n` +
-        `💬 Un *texto* → "Vendí 2 empanadas a 10bs"\n` +
-        `🎤 Un *audio* → Describiendo tu venta\n\n` +
-        `¡Empecemos! 🚀`,
+          `📍 *Negocio:* ${business.name}\n` +
+          `📱 *WhatsApp:* Este número\n\n` +
+          `Ahora puedes registrar ventas enviándome:\n` +
+          `💬 Un *texto* → "Vendí 2 empanadas a 10bs"\n` +
+          `🎤 Un *audio* → Describiendo tu venta\n\n` +
+          `¡Empecemos! 🚀`,
       );
 
-      this.logger.log(`✅ Negocio "${business.name}" activado con número ${phone}`);
+      this.logger.log(
+        `✅ Negocio "${business.name}" activado con número ${phone}`,
+      );
     } catch (error) {
       this.logger.error(`Error en activación: ${error.message}`);
       await this.whatsappService.sendMessage(
@@ -148,7 +157,9 @@ export class WhatsappWebhookService {
           return;
         }
 
-        const audioBuffer = await this.whatsappService.downloadMedia(message.audio.id);
+        const audioBuffer = await this.whatsappService.downloadMedia(
+          message.audio.id,
+        );
         text = await this.groqService.transcribeAudio(audioBuffer);
 
         if (!text || text.trim().length === 0) {
@@ -213,11 +224,11 @@ export class WhatsappWebhookService {
         await this.whatsappService.sendMessage(
           phone,
           `✅ *Venta registrada*\n\n` +
-          `📦 *Producto:* ${saleData.product_name}\n` +
-          `💰 *Monto:* Bs. ${saleData.amount}\n` +
-          `💳 *Pago:* ${saleData.payment_method}\n` +
-          `📊 *Cantidad:* ${saleData.quantity}\n\n` +
-          `📱 Revisa tus reportes en la app de Tinka.`,
+            `📦 *Producto:* ${saleData.product_name}\n` +
+            `💰 *Monto:* Bs. ${saleData.amount}\n` +
+            `💳 *Pago:* ${saleData.payment_method}\n` +
+            `📊 *Cantidad:* ${saleData.quantity}\n\n` +
+            `📱 Revisa tus reportes en la app de Tinka.`,
         );
 
         this.logger.log(
@@ -232,8 +243,8 @@ export class WhatsappWebhookService {
       await this.whatsappService.sendMessage(
         phone,
         `❌ No pude procesar tu mensaje.\n\n` +
-        `Intenta de nuevo con algo como:\n` +
-        `"Vendí 2 empanadas a 10 bolivianos en efectivo" o pregúntame "¿Cuánto he vendido hoy?"`,
+          `Intenta de nuevo con algo como:\n` +
+          `"Vendí 2 empanadas a 10 bolivianos en efectivo" o pregúntame "¿Cuánto he vendido hoy?"`,
       );
     }
   }

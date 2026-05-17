@@ -10,7 +10,12 @@ import { BusinessesModule } from '../businesses/businesses.module';
 @Module({
   imports: [SalesModule, BusinessesModule],
   controllers: [WhatsappController],
-  providers: [WhatsappWebhookService, GroqService, OpenaiService, WhatsappService],
+  providers: [
+    WhatsappWebhookService,
+    GroqService,
+    OpenaiService,
+    WhatsappService,
+  ],
   exports: [WhatsappWebhookService, GroqService, OpenaiService],
 })
 export class WhatsappModule {}

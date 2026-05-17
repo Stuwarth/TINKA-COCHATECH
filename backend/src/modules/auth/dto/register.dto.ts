@@ -31,4 +31,3 @@ export class RegisterDto {
   @IsString()
   description?: string;
 }
-

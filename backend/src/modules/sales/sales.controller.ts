@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Post, Query, UseGuards, Request, Headers, ForbiddenException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+  Request,
+  Headers,
+  ForbiddenException,
+} from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ListSalesDto } from './dto/list-sales.dto';
@@ -10,9 +20,14 @@ import { supabase } from '../../config/supabase.config';
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
-  private async validateBusinessOwnership(businessId: string | undefined, userId: string): Promise<void> {
+  private async validateBusinessOwnership(
+    businessId: string | undefined,
+    userId: string,
+  ): Promise<void> {
     if (!businessId) {
-      throw new ForbiddenException('Negocio no especificado (x-business-id header requerido)');
+      throw new ForbiddenException(
+        'Negocio no especificado (x-business-id header requerido)',
+      );
     }
 
     const { data, error } = await supabase
@@ -23,7 +38,9 @@ export class SalesController {
       .single();
 
     if (error || !data) {
-      throw new ForbiddenException('No tienes acceso a este negocio o el negocio no existe');
+      throw new ForbiddenException(
+        'No tienes acceso a este negocio o el negocio no existe',
+      );
     }
   }
 
@@ -36,10 +53,13 @@ export class SalesController {
     const userId = req.user.sub;
     const finalBusinessId = businessId || createSaleDto.business_id;
     await this.validateBusinessOwnership(finalBusinessId, userId);
-    return this.salesService.createSale({
-      ...createSaleDto,
-      business_id: finalBusinessId,
-    }, userId);
+    return this.salesService.createSale(
+      {
+        ...createSaleDto,
+        business_id: finalBusinessId,
+      },
+      userId,
+    );
   }
 
   @Get()
@@ -50,15 +70,16 @@ export class SalesController {
   ) {
     const userId = req.user.sub;
     await this.validateBusinessOwnership(businessId, userId);
-    const sales = await this.salesService.listSales(query.from, query.to, businessId);
+    const sales = await this.salesService.listSales(
+      query.from,
+      query.to,
+      businessId,
+    );
     return sales || [];
   }
 
   @Get('today')
-  async today(
-    @Request() req,
-    @Headers('x-business-id') businessId: string,
-  ) {
+  async today(@Request() req, @Headers('x-business-id') businessId: string) {
     const userId = req.user.sub;
     await this.validateBusinessOwnership(businessId, userId);
     const sales = await this.salesService.getSalesToday(businessId);
@@ -66,10 +87,7 @@ export class SalesController {
   }
 
   @Get('summary')
-  async summary(
-    @Request() req,
-    @Headers('x-business-id') businessId: string,
-  ) {
+  async summary(@Request() req, @Headers('x-business-id') businessId: string) {
     const userId = req.user.sub;
     await this.validateBusinessOwnership(businessId, userId);
 
@@ -115,8 +133,15 @@ export class SalesController {
     const yesterday = last5Days[last5Days.length - 2]?.amount || 1;
     const percentageUp = ((today - yesterday) / yesterday) * 100;
 
-    const allSales = await this.salesService.listSales(undefined, undefined, businessId);
-    const totalBalanceEver = allSales.reduce((sum, sale) => Number(sum) + Number(sale.amount), 0);
+    const allSales = await this.salesService.listSales(
+      undefined,
+      undefined,
+      businessId,
+    );
+    const totalBalanceEver = allSales.reduce(
+      (sum, sale) => Number(sum) + Number(sale.amount),
+      0,
+    );
 
     return {
       total_balance: totalBalanceEver,

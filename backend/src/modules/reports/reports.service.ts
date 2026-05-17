@@ -28,10 +28,7 @@ export class ReportsService {
       userId,
     );
 
-    const total = byPaymentMethod.reduce(
-      (sum, item) => sum + item.amount,
-      0,
-    );
+    const total = byPaymentMethod.reduce((sum, item) => sum + item.amount, 0);
 
     return {
       period: {
@@ -74,4 +71,3 @@ export class ReportsService {
     };
   }
 }
-

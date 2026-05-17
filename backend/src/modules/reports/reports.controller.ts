@@ -32,4 +32,3 @@ export class ReportsController {
     return this.reportsService.getDailyReport(from, to, userId);
   }
 }
-

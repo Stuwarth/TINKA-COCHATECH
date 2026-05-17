@@ -27,7 +27,10 @@ export class GroqService {
    * @param filename Nombre del archivo (ej: "audio.ogg")
    * @returns Texto transcrito
    */
-  async transcribeAudio(audioBuffer: Buffer, filename = 'audio.ogg'): Promise<string> {
+  async transcribeAudio(
+    audioBuffer: Buffer,
+    filename = 'audio.ogg',
+  ): Promise<string> {
     try {
       const file = new File([new Uint8Array(audioBuffer)], filename, {
         type: 'audio/ogg',
@@ -40,9 +43,10 @@ export class GroqService {
         response_format: 'text',
       });
 
-      const text = typeof transcription === 'string'
-        ? transcription
-        : (transcription as any).text || '';
+      const text =
+        typeof transcription === 'string'
+          ? transcription
+          : (transcription as any).text || '';
 
       this.logger.log(`Audio transcrito: "${text.substring(0, 100)}..."`);
       return text.trim();
@@ -112,7 +116,9 @@ Assistant: {"product_name":"3 Jugos","quantity":3,"amount":15,"payment_method":"
       return parsed;
     } catch (error) {
       this.logger.error(`Error extrayendo datos de venta: ${error.message}`);
-      throw new Error(`No pude entender la venta. Intenta de nuevo con más detalle.`);
+      throw new Error(
+        `No pude entender la venta. Intenta de nuevo con más detalle.`,
+      );
     }
   }
 

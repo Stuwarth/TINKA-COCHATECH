@@ -8,7 +8,13 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
-  imports: [AuthModule, SalesModule, ReportsModule, BusinessesModule, WhatsappModule],
+  imports: [
+    AuthModule,
+    SalesModule,
+    ReportsModule,
+    BusinessesModule,
+    WhatsappModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

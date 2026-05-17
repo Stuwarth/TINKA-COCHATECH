@@ -9,4 +9,3 @@ import { SalesModule } from '../sales/sales.module';
   providers: [ReportsService],
 })
 export class ReportsModule {}
-

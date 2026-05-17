@@ -20,7 +20,9 @@ export class OpenaiService {
   constructor() {
     this.apiKey = process.env.GROQ_API_KEY || '';
     if (!this.apiKey) {
-      this.logger.warn('⚠️ GROQ_API_KEY no configurada en las variables de entorno.');
+      this.logger.warn(
+        '⚠️ GROQ_API_KEY no configurada en las variables de entorno.',
+      );
     }
   }
 
@@ -31,18 +33,30 @@ export class OpenaiService {
    * @param businessContext Información sobre el negocio y sus ventas de hoy
    * @returns OpenAIResponse con la intención clasificada y los datos correspondientes
    */
-  async classifyAndProcess(text: string, businessContext: { businessName: string; todaySales: any[] }): Promise<OpenAIResponse> {
+  async classifyAndProcess(
+    text: string,
+    businessContext: { businessName: string; todaySales: any[] },
+  ): Promise<OpenAIResponse> {
     try {
       if (!this.apiKey) {
         throw new Error('GROQ_API_KEY no está configurada.');
       }
 
       // Convertir ventas de hoy a un formato legible para el prompt
-      const salesSummaryText = businessContext.todaySales.length > 0
-        ? businessContext.todaySales.map(s => `- ${s.quantity}x ${s.product_name} por Bs. ${s.amount} (${s.payment_method})`).join('\n')
-        : 'No se han registrado ventas hoy todavía.';
+      const salesSummaryText =
+        businessContext.todaySales.length > 0
+          ? businessContext.todaySales
+              .map(
+                (s) =>
+                  `- ${s.quantity}x ${s.product_name} por Bs. ${s.amount} (${s.payment_method})`,
+              )
+              .join('\n')
+          : 'No se han registrado ventas hoy todavía.';
 
-      const totalAmountToday = businessContext.todaySales.reduce((sum, s) => sum + s.amount, 0);
+      const totalAmountToday = businessContext.todaySales.reduce(
+        (sum, s) => sum + s.amount,
+        0,
+      );
 
       const systemPrompt = `Eres Tinka, la Coach de Inteligencia Artificial para microemprendedores y pequeños negocios de Banco FIE en Bolivia.
 Estás hablando con el dueño del negocio "${businessContext.businessName}" a través de WhatsApp.
@@ -82,7 +96,7 @@ REGLAS DE CLASIFICACIÓN:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
@@ -98,7 +112,9 @@ REGLAS DE CLASIFICACIÓN:
 
       if (!response.ok) {
         const errorDetails = await response.text();
-        this.logger.error(`Error en la API de Groq: Status ${response.status} | ${errorDetails}`);
+        this.logger.error(
+          `Error en la API de Groq: Status ${response.status} | ${errorDetails}`,
+        );
         throw new Error(`API de Groq falló con estado ${response.status}`);
       }
 
@@ -118,7 +134,8 @@ REGLAS DE CLASIFICACIÓN:
       // Respuesta de fallback segura
       return {
         intent: 'chat',
-        chatResponse: '¡Hola! Disculpa, estoy teniendo un pequeño problema para conectarme con mis sistemas. ¿Podrías volver a intentar enviarme tu mensaje en un momento? 🚀',
+        chatResponse:
+          '¡Hola! Disculpa, estoy teniendo un pequeño problema para conectarme con mis sistemas. ¿Podrías volver a intentar enviarme tu mensaje en un momento? 🚀',
       };
     }
   }
