@@ -6,6 +6,7 @@ import NuevaVenta from './components/NuevaVenta';
 import CoachIA from './components/CoachIA';
 import Login from './components/Login';
 import Register from './components/Register';
+import Reportes from './components/Reportes';
 import api from './api';
 
 function App() {
@@ -124,6 +125,7 @@ function App() {
           <Route path="/" element={<Dashboard balance={balance} transactions={transactions} userName={user?.full_name} businessName={business?.name} business={business} />} />
           <Route path="/vender" element={<NuevaVenta onAddTransaction={handleAddTransaction} />} />
           <Route path="/coach" element={<CoachIA userName={user?.full_name} />} />
+          <Route path="/reportes" element={<Reportes />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </MobileLayout>

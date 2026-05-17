@@ -27,8 +27,8 @@ export default function CoachIA({ userName }) {
 
   // Respuestas inteligentes basadas en datos REALES de ventas locales
   const generateLocalResponse = (message) => {
-    const sales = JSON.parse(localStorage.getItem('local_sales') || '[]');
-    const totalSales = sales.reduce((sum, s) => sum + (s.amount || 0), 0);
+    const sales = JSON.parse(localStorage.getItem('tinka_sales') || '[]');
+    const totalSales = sales.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
     const totalCount = sales.length;
     const avgSale = totalCount > 0 ? (totalSales / totalCount).toFixed(2) : 0;
 
@@ -37,7 +37,7 @@ export default function CoachIA({ userName }) {
     sales.forEach(s => {
       if (!s.created_at) return;
       const day = new Date(s.created_at).toLocaleDateString('es-BO', { weekday: 'long' });
-      byDay[day] = (byDay[day] || 0) + s.amount;
+      byDay[day] = (byDay[day] || 0) + Number(s.amount);
     });
     const bestDay = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
 
@@ -45,7 +45,7 @@ export default function CoachIA({ userName }) {
     const byMethod = {};
     sales.forEach(s => {
       const m = s.payment_method || s.method || 'Efectivo';
-      byMethod[m] = (byMethod[m] || 0) + s.amount;
+      byMethod[m] = (byMethod[m] || 0) + Number(s.amount);
     });
 
     const msg = message.toLowerCase();
@@ -88,7 +88,6 @@ export default function CoachIA({ userName }) {
     setLoading(true);
 
     try {
-      // Intentar backend real primero
       const reply = await api.chatWithCoach(text);
       if (reply) {
         setMessages(prev => [...prev, { id: Date.now(), text: reply, sender: 'bot' }]);
@@ -96,7 +95,6 @@ export default function CoachIA({ userName }) {
         throw new Error('No reply');
       }
     } catch {
-      // Fallback: respuesta inteligente local basada en datos de ventas
       const localReply = generateLocalResponse(text);
       setTimeout(() => {
         setMessages(prev => [...prev, { id: Date.now(), text: localReply, sender: 'bot' }]);
