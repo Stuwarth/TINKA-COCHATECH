@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Headers } from '@nestjs/common';
 import { CoachService } from './coach.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -8,9 +8,13 @@ export class CoachController {
   constructor(private readonly coachService: CoachService) {}
 
   @Post('chat')
-  async chat(@Request() req, @Body('message') message: string) {
+  async chat(
+    @Request() req,
+    @Headers('x-business-id') businessId: string,
+    @Body('message') message: string,
+  ) {
     const userId = req.user.sub; // sub holds the user id in standard JWT
-    const reply = await this.coachService.getChatResponse(userId, message);
+    const reply = await this.coachService.getChatResponse(userId, businessId, message);
     return { reply };
   }
 }
