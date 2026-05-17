@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, TrendingUp, Target, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, TrendingUp, RefreshCw } from 'lucide-react';
 import api from '../api';
 
-export default function Dashboard({ balance, transactions, userName, businessName }) {
+export default function Dashboard({ balance, transactions, userName, businessName, business }) {
   const [summary, setSummary] = useState(null);
   const [todaySales, setTodaySales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentBusiness, setCurrentBusiness] = useState(business);
+
+  const isPending = currentBusiness?.status === 'pending';
+  const whatsappLink = currentBusiness?.whatsapp_link || '';
 
   useEffect(() => {
     loadData();
@@ -20,6 +24,19 @@ export default function Dashboard({ balance, transactions, userName, businessNam
 
       const salesData = await api.getSales();
       if (salesData && salesData.length > 0) setTodaySales(salesData);
+
+      // Verificar si el estado del negocio cambió en la base de datos
+      if (business && business.status === 'pending') {
+        const myBizs = await api.getMyBusinesses();
+        if (myBizs && myBizs.length > 0) {
+          const match = myBizs.find(b => b.id === business.id);
+          if (match && match.status === 'active') {
+            const updated = { ...business, status: 'active', whatsapp_phone: match.whatsapp_phone };
+            localStorage.setItem('business', JSON.stringify(updated));
+            setCurrentBusiness(updated);
+          }
+        }
+      }
     } catch (e) {
       console.warn('Usando datos locales');
     }
@@ -75,6 +92,47 @@ export default function Dashboard({ balance, transactions, userName, businessNam
       </div>
 
       <div className="px-6">
+
+        {/* Banner de Vinculación de WhatsApp Pendiente */}
+        {isPending && (
+          <div className="mb-8 p-5 bg-gradient-to-r from-[#002C6A] via-[#0b3875] to-[#E6007E]/20 border border-[#E6007E]/20 rounded-[28px] shadow-[0_10px_30px_rgba(230,0,126,0.15)] relative overflow-hidden animate-in slide-in-from-top-6 duration-500">
+            <div className="absolute top-0 right-0 w-28 h-28 bg-[#25D366]/10 rounded-full blur-xl -translate-y-6 translate-x-6" />
+            
+            <div className="flex gap-4 items-start relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-sm relative">
+                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#25D366] rounded-full animate-ping" />
+                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#25D366] rounded-full" />
+                <svg className="w-6 h-6 text-white fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.62.962 3.21 1.48 4.797 1.481 5.379 0 9.761-4.38 9.764-9.759.002-2.607-1.01-5.059-2.85-6.902C16.46 2.13 14.013.974 11.4 1.01 6.023 1.01 1.642 5.39 1.64 10.77c-.001 1.705.452 3.37 1.31 4.866l-.997 3.64 3.73-.978l.374.202zM17.15 14.4c-.3-.15-1.782-.88-2.057-.98-.275-.1-.475-.15-.675.15-.2.3-.775.98-.95 1.18-.175.2-.35.225-.65.075-.3-.15-1.265-.467-2.41-1.485-.89-.795-1.49-1.777-1.665-2.078-.175-.3-.02-.462.13-.611.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.675-1.625-.925-2.225-.244-.589-.48-.508-.675-.518-.175-.008-.375-.01-.575-.01-.2 0-.525.075-.8.375-.275.3-1.05 1.025-1.05 2.5s1.075 2.9 1.225 3.1c.15.2 2.11 3.22 5.11 4.52.714.31 1.272.495 1.705.632.718.228 1.37.196 1.885.119.574-.086 1.78-.727 2.03-1.43.25-.702.25-1.303.175-1.43-.075-.127-.275-.202-.575-.352z"/>
+                </svg>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-white font-extrabold text-sm tracking-wide">¡Activa tu Bot de WhatsApp!</h4>
+                  <p className="text-[11px] text-white/70 leading-relaxed mt-1 font-semibold">
+                    Vincula tu número para poder enviar tus ventas por audio o texto directamente a Tinka.
+                  </p>
+                </div>
+
+                {whatsappLink ? (
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba5a] text-white text-[10px] font-extrabold uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-md shadow-[#25D366]/20 font-bold"
+                  >
+                    Vincular ahora
+                  </a>
+                ) : (
+                  <p className="text-[10px] text-yellow-300 font-bold bg-white/5 py-1 px-2.5 rounded-lg inline-block">
+                    ⚠️ Abre WhatsApp y envía: ACTIVAR:token:{businessName}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Metric Cards - Premium FinTech Design */}
       <div className="grid grid-cols-2 gap-4 mb-10">
