@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
+import { CoachModule } from './modules/coach/coach.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
     SalesModule,
     ReportsModule,
     BusinessesModule,
+    CoachModule,
     WhatsappModule,
   ],
   controllers: [AppController],
