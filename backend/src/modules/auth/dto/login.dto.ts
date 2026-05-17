@@ -1,11 +1,11 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsString, MinLength, IsNotEmpty } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail()
-  email: string;
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 
   @IsString()
-  @MinLength(6)
-  password: string;
+  @MinLength(4, { message: 'El PIN debe tener al menos 4 dígitos' })
+  pin: string;
 }
-

@@ -5,7 +5,7 @@ import logoTinka from '../assets/img/logoTinka.png';
 import defaultAssistantLogo from '../assets/img/logoTinkaChatBot.png';
 import ChatModal from './ChatModal';
 
-export default function MobileLayout({ children, assistantLogo }) {
+export default function MobileLayout({ children, assistantLogo, userName, onLogout }) {
   const location = useLocation();
   const currentPath = location.pathname;
   const [modalOpen, setModalOpen] = useState(false);
@@ -24,14 +24,16 @@ export default function MobileLayout({ children, assistantLogo }) {
   const toggleModal = () => setModalOpen((v) => !v);
   const logoSrc = assistantLogo || defaultAssistantLogo;
 
+  const displayName = userName || 'Emprendedor';
+
   return (
     <div className="flex justify-center bg-[#f7f7f7] min-h-screen font-sans">
       <div className="w-full max-w-[400px] bg-white flex flex-col h-screen shadow-[0_0_40px_rgba(0,0,0,0.04)] border-x border-[#ebebeb] relative">
         
         {/* Top Nav - Minimalist */}
-        <header className="bg-[#E6E6E6] px-6 py-5 border-b border-[#ebebeb] flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-white px-6 py-5 border-b border-[#ebebeb] flex items-center justify-between sticky top-0 z-20">
           <img src={logoTinka} alt="Tinka" className="h-5 object-contain" />
-          <div className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">Doña María</div>
+          <div className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">{displayName}</div>
         </header>
 
         {/* Main Content */}
@@ -47,8 +49,8 @@ export default function MobileLayout({ children, assistantLogo }) {
               <div className="bg-white text-xs text-black px-3 py-2 rounded-lg shadow-md mb-2">¿En qué puedo ayudarte?</div>
             )}
 
-            <button onClick={toggleModal} className="bg-white border-2 border-black text-white p-2 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center justify-center">
-              <img src={logoSrc} alt="Asistente" className="w-9 h-9 rounded-full object-cover" />
+            <button onClick={toggleModal} className="bg-white border border-[#ebebeb] text-white p-1 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-105 transition-transform flex items-center justify-center">
+              <img src={logoSrc} alt="Asistente" className="w-10 h-10 rounded-full object-cover" />
             </button>
           </div>
         </div>
