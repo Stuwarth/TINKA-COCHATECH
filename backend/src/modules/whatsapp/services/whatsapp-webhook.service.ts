@@ -6,6 +6,12 @@ import { GroqService } from './groq.service';
 import { OpenaiService } from './openai.service';
 import { WhatsAppMessage } from '../types/whatsapp.types';
 
+interface BusinessRecord {
+  id: string;
+  name: string;
+  user_id: string;
+}
+
 @Injectable()
 export class WhatsappWebhookService {
   private readonly logger = new Logger(WhatsappWebhookService.name);
@@ -139,7 +145,7 @@ export class WhatsappWebhookService {
   private async handleSaleMessage(
     phone: string,
     message: WhatsAppMessage,
-    business: any,
+    business: BusinessRecord,
   ): Promise<void> {
     try {
       let text: string;
@@ -196,9 +202,9 @@ export class WhatsappWebhookService {
       }
 
       // Obtener ventas del día actual del negocio para el contexto de la IA
-      const businessId = business.id as string;
-      const businessName = business.name as string;
-      const businessUserId = business.user_id as string;
+      const businessId = business.id;
+      const businessName = business.name;
+      const businessUserId = business.user_id;
 
       const todaySales = await this.salesService.getSalesToday(businessId);
 

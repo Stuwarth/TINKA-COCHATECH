@@ -5,6 +5,7 @@ interface SaleData {
   product_name: string;
   amount: number;
   payment_method: string;
+  location?: string;
 }
 
 interface BusinessContext {

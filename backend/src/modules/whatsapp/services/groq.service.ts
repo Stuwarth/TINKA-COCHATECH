@@ -47,8 +47,17 @@ export class GroqService {
       let text = '';
       if (typeof transcription === 'string') {
         text = transcription;
-      } else if (transcription && typeof transcription === 'object') {
-        text = String((transcription as unknown as { text?: unknown }).text || '');
+      } else if (
+        transcription &&
+        typeof transcription === 'object' &&
+        'text' in transcription
+      ) {
+        const textValue = (transcription as { text?: unknown }).text;
+        if (typeof textValue === 'string') {
+          text = textValue;
+        } else if (typeof textValue === 'number') {
+          text = String(textValue);
+        }
       }
 
       this.logger.log(`Audio transcrito: "${text.substring(0, 100)}..."`);
