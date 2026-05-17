@@ -66,14 +66,15 @@ function App() {
     setBalance(0);
   };
 
-  const handleAddTransaction = (amountStr, method, productName) => {
+  const handleAddTransaction = (amountStr, method, productName, location) => {
     const amount = parseFloat(amountStr);
     const newTx = {
       id: Date.now(),
-      prod: productName || 'Venta Rápida',
-      product_name: productName || 'Venta Rápida',
+      prod: productName || 'Venta Rpida',
+      product_name: productName || 'Venta Rpida',
       method: method === 'qr' ? 'Pago QR' : 'Efectivo',
       payment_method: method === 'qr' ? 'Pago QR' : 'Efectivo',
+      location: location || 'Tienda',
       amount: amount,
       time: new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }),
       created_at: new Date().toISOString(),
@@ -94,7 +95,7 @@ function App() {
       product_name: productName || 'Venta General',
       amount,
       payment_method: method === 'qr' ? 'QR' : 'Efectivo',
-      location: 'Tienda',
+      location: location || 'Tienda',
     });
   };
 
