@@ -10,6 +10,7 @@ export default function MobileLayout({ children, assistantLogo, userName, onLogo
   const currentPath = location.pathname;
   const [modalOpen, setModalOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     if (modalOpen) {
@@ -25,6 +26,12 @@ export default function MobileLayout({ children, assistantLogo, userName, onLogo
   const logoSrc = assistantLogo || defaultAssistantLogo;
 
   const displayName = userName || 'Emprendedor';
+  const handleLogout = () => {
+    setUserMenuOpen(false);
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   return (
     <div className="flex justify-center bg-[#f7f7f7] min-h-screen font-sans">
@@ -33,11 +40,31 @@ export default function MobileLayout({ children, assistantLogo, userName, onLogo
         {/* Top Nav - Minimalist */}
         <header className="bg-white px-6 py-5 border-b border-[#ebebeb] flex items-center justify-between sticky top-0 z-20">
           <img src={logoTinka} alt="Tinka" className="h-5 object-contain" />
-          <div className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">{displayName}</div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((value) => !value)}
+              className="text-[10px] uppercase tracking-widest font-semibold text-[#888] hover:text-fie-blue transition-colors"
+            >
+              {displayName}
+            </button>
+
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#ebebeb] bg-white shadow-[0_16px_40px_rgba(0,0,0,0.08)] overflow-hidden z-30">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 text-left text-sm font-medium text-[#c0392b] hover:bg-[#fff5f4] transition-colors"
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-white">
+        <main className="flex-1 overflow-y-auto bg-white" onClick={() => setUserMenuOpen(false)}>
           {children}
         </main>
 
