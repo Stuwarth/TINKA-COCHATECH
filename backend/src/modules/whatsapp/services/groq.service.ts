@@ -14,8 +14,10 @@ export class GroqService {
   private readonly groq: Groq;
 
   constructor() {
+    // Evitar que el constructor de Groq falle al inicio si la API key está comentada/vacía
+    const apiKey = process.env.GROQ_API_KEY || 'DUMMY_KEY_NOT_CONFIGURED';
     this.groq = new Groq({
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey,
     });
   }
 

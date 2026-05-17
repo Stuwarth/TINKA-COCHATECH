@@ -6,12 +6,12 @@
 # @host = https://tu-proyecto.up.railway.app  <-- Descomenta y edita esta línea para probar en Railway
 
 @verifyToken = tinka_verify_2024
-@myPhoneNumber = 59169891022
+@myPhoneNumber = 59161618356
 @activationToken = ABC12345
 @businessName = Mi Tienda de Prueba
 
-@phoneNumberId = 1114529715076726
-@accessToken = EAAhlfP24ItYBRUZBwfY2GYpMDIptnVGOxlAqQ3xkPKZAaMI2qnTkw2A8O8ZC8grDLvwIrqI0LDaVmMQOMaLgjI1ZA2keAdqOG2ZCFdPGKiwer4ilYqL4NKjOpfWevKfgrcyCQNW0pDzvqdR0hVgBp4o47XBLAwLP1HzLCdl0hfFHH8PQafFQ13ZCGAVZABGUKHihgZDZD
+@phoneNumberId = 1037094842817542
+@accessToken = EAAhlfP24ItYBQZCWCTw9GK3F7yYVEMJUToPlyLpgesq6QROZBHUoa9QdWyHrM57oA1X8p3yO2EozsvZBYPCTfTRR0unKMwjYpn2rBZAOeA4X733n3LQNOxqSxlQ7vWKvh2QZCJ3g8gpXuadKbCnO5pO1TpvRYBF1hCM205dleQZAYMNswET3U3cZAf3c5gWSgZDZD
 
 
 ### 1. Verificar Webhook (GET)
