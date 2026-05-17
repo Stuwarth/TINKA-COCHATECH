@@ -1,9 +1,8 @@
-const CACHE_NAME = 'tinka-cache-v1';
+const CACHE_NAME = 'tinka-cache-v2';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/favicon.svg',
   '/logoTinkaChatBot.png'
 ];
 

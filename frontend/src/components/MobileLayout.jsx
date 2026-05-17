@@ -54,7 +54,7 @@ export default function MobileLayout({ children, assistantLogo, userName, onLogo
 
   return (
     <div className="flex justify-center bg-[#f7f7f7] min-h-screen font-sans">
-      <div className="w-full max-w-100 bg-white flex flex-col h-screen shadow-[0_0_40px_rgba(0,0,0,0.04)] border-x border-[#ebebeb] relative">
+      <div className="w-full max-w-100 md:shadow-[0_0_40px_rgba(0,0,0,0.04)] md:border-x md:border-[#ebebeb] bg-white flex flex-col h-screen relative">
         
         {/* Top Nav - Minimalist */}
         <header className="bg-white px-6 py-5 border-b border-[#ebebeb] flex items-center justify-between sticky top-0 z-20">

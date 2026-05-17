@@ -102,7 +102,7 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="flex justify-center bg-[#f0f4f8] min-h-screen font-sans">
-        <div className="w-full max-w-[400px] bg-white flex flex-col h-screen shadow-[0_20px_60px_rgba(0,0,0,0.1)] border-x border-[#ebebeb] relative overflow-hidden">
+        <div className="w-full max-w-[400px] md:shadow-[0_20px_60px_rgba(0,0,0,0.1)] md:border-x md:border-[#ebebeb] bg-white flex flex-col h-screen relative overflow-hidden">
           {showRegister ? (
             <Register
               onRegister={handleRegister}
