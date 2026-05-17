@@ -1,32 +1,37 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards, Request } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ListSalesDto } from './dto/list-sales.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() createSaleDto: CreateSaleDto) {
-    return this.salesService.createSale(createSaleDto);
+  async create(@Request() req, @Body() createSaleDto: CreateSaleDto) {
+    return this.salesService.createSale(createSaleDto, req.user.sub);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async list(@Query() query: ListSalesDto) {
-    const sales = await this.salesService.listSales(query.from, query.to);
+  async list(@Request() req, @Query() query: ListSalesDto) {
+    const sales = await this.salesService.listSales(query.from, query.to, req.user.sub);
     return sales || [];
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('today')
-  async today() {
-    const sales = await this.salesService.getSalesToday();
+  async today(@Request() req) {
+    const sales = await this.salesService.getSalesToday(req.user.sub);
     return sales || [];
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('summary')
-  async summary() {
-    const salesLastWeek = await this.salesService.getSalesLastWeek();
+  async summary(@Request() req) {
+    const salesLastWeek = await this.salesService.getSalesLastWeek(req.user.sub);
     const totalWeek = salesLastWeek.reduce((sum, sale) => sum + sale.amount, 0);
 
     // Preparar datos para los últimos 5 días

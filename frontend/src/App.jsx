@@ -49,6 +49,9 @@ function App() {
     setIsAuthenticated(false);
     setUser(null);
     setBusiness(null);
+    setTransactions([]);
+    setBalance(0);
+    localStorage.removeItem('local_sales'); // Limpiar el caché local para evitar fugas entre cuentas de prueba
   };
 
   const handleAddTransaction = (amountStr, method, productName) => {
