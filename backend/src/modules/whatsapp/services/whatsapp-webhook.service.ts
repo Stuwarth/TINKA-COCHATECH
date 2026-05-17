@@ -213,6 +213,7 @@ export class WhatsappWebhookService {
             amount: saleData.amount,
             payment_method: saleData.payment_method,
             quantity: saleData.quantity,
+            location: saleData.location || 'Tienda',
             business_id: business.id,
             source: source,
             raw_message: text,
@@ -227,12 +228,13 @@ export class WhatsappWebhookService {
             `📦 *Producto:* ${saleData.product_name}\n` +
             `💰 *Monto:* Bs. ${saleData.amount}\n` +
             `💳 *Pago:* ${saleData.payment_method}\n` +
+            `📍 *Ubicación:* ${saleData.location || 'Tienda'}\n` +
             `📊 *Cantidad:* ${saleData.quantity}\n\n` +
             `📱 Revisa tus reportes en la app de Tinka.`,
         );
 
         this.logger.log(
-          `✅ Venta registrada para "${business.name}": ${saleData.product_name} - Bs.${saleData.amount}`,
+          `✅ Venta registrada para "${business.name}": ${saleData.product_name} - Bs.${saleData.amount} [${saleData.location || 'Tienda'}]`,
         );
       } else if (aiResponse.intent === 'chat' && aiResponse.chatResponse) {
         // Responder directamente con la respuesta del chatbot conversacional

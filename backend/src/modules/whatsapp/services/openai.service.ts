@@ -7,6 +7,7 @@ export interface OpenAIResponse {
     quantity: number;
     amount: number;
     payment_method: 'Efectivo' | 'QR' | 'Transferencia' | 'Tarjeta';
+    location: 'Tienda' | 'Feria' | 'Delivery' | string;
   };
   chatResponse?: string;
 }
@@ -71,7 +72,8 @@ El JSON debe seguir esta estructura exacta:
     "product_name": string (ej: "Empanada de carne". NO incluyas cantidades aquí, solo el nombre del producto en singular/plural),
     "quantity": number (cantidad vendida, por defecto 1 si no se especifica),
     "amount": number (monto TOTAL en bolivianos de esta venta, ej: si vendió 2 a 5bs c/u, el monto total es 10),
-    "payment_method": "Efectivo" | "QR" | "Transferencia" | "Tarjeta" (por defecto "Efectivo" si no se especifica)
+    "payment_method": "Efectivo" | "QR" | "Transferencia" | "Tarjeta" (por defecto "Efectivo" si no se especifica),
+    "location": "Tienda" | "Feria" | "Delivery" (por defecto "Tienda" si no se especifica, o el valor correspondiente si menciona cosas como "en la feria", "a domicilio", "por delivery", "en el local")
   },
   "chatResponse": string // SOLO si "intent" es "chat". Tu respuesta conversacional, motivadora, y amable como Tinka Coach de Banco FIE.
 }
