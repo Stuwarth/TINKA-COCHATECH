@@ -38,8 +38,7 @@ function App() {
   const handleRegister = async (formData) => {
     try {
       const response = await api.register(formData);
-      // Tras registro exitoso, volver al Login para entrar con el PIN
-      setShowRegister(false);
+      return response;
     } catch (error) {
       throw new Error(error.message || 'Error al registrar');
     }
@@ -107,7 +106,7 @@ function App() {
     <Router>
       <MobileLayout userName={user?.full_name} onLogout={handleLogout}>
         <Routes>
-          <Route path="/" element={<Dashboard balance={balance} transactions={transactions} userName={user?.full_name} businessName={business?.name} />} />
+          <Route path="/" element={<Dashboard balance={balance} transactions={transactions} userName={user?.full_name} businessName={business?.name} business={business} />} />
           <Route path="/vender" element={<NuevaVenta onAddTransaction={handleAddTransaction} />} />
           <Route path="/coach" element={<CoachIA userName={user?.full_name} />} />
           <Route path="*" element={<Navigate to="/" replace />} />

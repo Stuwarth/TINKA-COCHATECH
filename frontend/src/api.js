@@ -19,7 +19,10 @@ export const api = {
       // Guardar token y datos de usuario
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      if (data.business) localStorage.setItem('business', JSON.stringify(data.business));
+      if (data.business) {
+        const businessObj = { ...data.business, whatsapp_link: data.whatsapp_link };
+        localStorage.setItem('business', JSON.stringify(businessObj));
+      }
       return data;
     } catch (error) {
       console.warn("Backend no conectado. Usando modo offline.");
@@ -52,7 +55,10 @@ export const api = {
       const data = await response.json();
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      if (data.business) localStorage.setItem('business', JSON.stringify(data.business));
+      if (data.business) {
+        const businessObj = { ...data.business, whatsapp_link: data.whatsapp_link };
+        localStorage.setItem('business', JSON.stringify(businessObj));
+      }
       return data;
     } catch (error) {
       console.warn("Backend no conectado. Guardando registro localmente.");
@@ -169,10 +175,23 @@ export const api = {
     return user ? JSON.parse(user) : null;
   },
 
-  // 10. Obtener datos del negocio actual
   getCurrentBusiness: () => {
     const business = localStorage.getItem('business');
     return business ? JSON.parse(business) : null;
+  },
+
+  // 11. Obtener los negocios del usuario del backend
+  getMyBusinesses: async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${API_URL}/businesses`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Error');
+      return await response.json();
+    } catch (error) {
+      return null;
+    }
   },
 };
 
