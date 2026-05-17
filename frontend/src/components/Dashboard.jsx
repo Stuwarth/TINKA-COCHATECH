@@ -60,10 +60,9 @@ export default function Dashboard({ balance, transactions, userName, businessNam
       }))
     : transactions;
 
-  // Si cargó del backend, el balance total debe venir del resumen o ser 0 si no hay nada,
-  // no debe caer en el "balance" del localStorage si el real es 0
-  const userObj = api.getCurrentUser();
-  const dbBalance = userObj && userObj.current_balance !== undefined ? Number(userObj.current_balance) : (summary?.total_week ?? 0);
+  // Si cargó del backend, el balance total debe venir del total_balance calculado dinámicamente por negocio,
+  // evitando usar el balance desactualizado o compartido global del usuario.
+  const dbBalance = summary?.total_balance !== undefined ? Number(summary.total_balance) : (summary?.total_week ?? 0);
 
   const totalBalance = loadedFromBackend
     ? dbBalance
