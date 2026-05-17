@@ -115,3 +115,19 @@ CREATE INDEX IF NOT EXISTS idx_businesses_activation_token ON businesses(activat
 -- ALTER TABLE sales ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
 -- ALTER TABLE sales ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'web';
 -- ALTER TABLE sales ADD COLUMN IF NOT EXISTS raw_message TEXT;
+-- 1. Actualizar la tabla de Negocios (businesses)
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS whatsapp_phone TEXT UNIQUE;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS activation_token TEXT UNIQUE;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS activation_expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE businesses ALTER COLUMN status SET DEFAULT 'pending';
+
+-- 2. Actualizar la tabla de Ventas (sales)
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE CASCADE;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'web';
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS raw_message TEXT;
+
+-- 3. Crear índices de optimización para búsquedas rápidas
+CREATE INDEX IF NOT EXISTS idx_businesses_whatsapp_phone ON businesses(whatsapp_phone);
+CREATE INDEX IF NOT EXISTS idx_businesses_activation_token ON businesses(activation_token);
+CREATE INDEX IF NOT EXISTS idx_sales_business_id ON sales(business_id);

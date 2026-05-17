@@ -3,6 +3,7 @@ import { WhatsappService } from '../../../common/services/whatsapp.service';
 import { BusinessesService } from '../../businesses/businesses.service';
 import { SalesService } from '../../sales/sales.service';
 import { GroqService } from './groq.service';
+import { OpenaiService } from './openai.service';
 import { WhatsAppMessage } from '../types/whatsapp.types';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class WhatsappWebhookService {
     private readonly businessesService: BusinessesService,
     private readonly salesService: SalesService,
     private readonly groqService: GroqService,
+    private readonly openaiService: OpenaiService,
   ) {}
 
   /**
@@ -135,6 +137,14 @@ export class WhatsappWebhookService {
         source = 'whatsapp_audio';
         this.logger.log(`Descargando audio ${message.audio.id}...`);
 
+        if (!process.env.GROQ_API_KEY) {
+          await this.whatsappService.sendMessage(
+            phone,
+            '🎤 Disculpa, la transcripción de audios no está disponible temporalmente porque no se ha configurado la API de transcripción. Por favor, escríbeme tu venta en un mensaje de texto. 📝',
+          );
+          return;
+        }
+
         const audioBuffer = await this.whatsappService.downloadMedia(message.audio.id);
         text = await this.groqService.transcribeAudio(audioBuffer);
 
@@ -151,48 +161,62 @@ export class WhatsappWebhookService {
       } else {
         await this.whatsappService.sendMessage(
           phone,
-          '📝 Solo puedo procesar *textos* y *audios* para registrar ventas.\n\nEjemplo: "Vendí 3 jugos a 15bs por QR"',
+          '📝 Solo puedo procesar *textos* y *audios* para registrar ventas o conversar conmigo.\n\nEjemplo: "Vendí 3 jugos a 15bs por QR" o pregúntame "¿Cuánto vendí hoy?"',
         );
         return;
       }
 
-      // Extraer datos con IA
-      const saleData = await this.groqService.extractSaleData(text);
+      // Obtener ventas del día actual del negocio para el contexto de la IA
+      const todaySales = await this.salesService.getSalesToday(business.user_id);
 
-      // Guardar en la base de datos
-      const sale = await this.salesService.createSale(
-        {
-          product_name: saleData.product_name,
-          amount: saleData.amount,
-          payment_method: saleData.payment_method,
-          quantity: saleData.quantity,
-          business_id: business.id,
-          source: source,
-        },
-        business.user_id,
-      );
+      // Clasificar y procesar con OpenAI (GitHub Models)
+      const aiResponse = await this.openaiService.classifyAndProcess(text, {
+        businessName: business.name,
+        todaySales: todaySales,
+      });
 
-      // Enviar confirmación
-      await this.whatsappService.sendMessage(
-        phone,
-        `✅ *Venta registrada*\n\n` +
-        `📦 *Producto:* ${saleData.product_name}\n` +
-        `💰 *Monto:* Bs. ${saleData.amount}\n` +
-        `💳 *Pago:* ${saleData.payment_method}\n` +
-        `📊 *Cantidad:* ${saleData.quantity}\n\n` +
-        `📱 Revisa tus reportes en la app de Tinka.`,
-      );
+      if (aiResponse.intent === 'sale' && aiResponse.saleData) {
+        const saleData = aiResponse.saleData;
 
-      this.logger.log(
-        `✅ Venta registrada para "${business.name}": ${saleData.product_name} - Bs.${saleData.amount}`,
-      );
+        // Guardar en la base de datos
+        const sale = await this.salesService.createSale(
+          {
+            product_name: saleData.product_name,
+            amount: saleData.amount,
+            payment_method: saleData.payment_method,
+            quantity: saleData.quantity,
+            business_id: business.id,
+            source: source,
+            raw_message: text,
+          },
+          business.user_id,
+        );
+
+        // Enviar confirmación
+        await this.whatsappService.sendMessage(
+          phone,
+          `✅ *Venta registrada*\n\n` +
+          `📦 *Producto:* ${saleData.product_name}\n` +
+          `💰 *Monto:* Bs. ${saleData.amount}\n` +
+          `💳 *Pago:* ${saleData.payment_method}\n` +
+          `📊 *Cantidad:* ${saleData.quantity}\n\n` +
+          `📱 Revisa tus reportes en la app de Tinka.`,
+        );
+
+        this.logger.log(
+          `✅ Venta registrada para "${business.name}": ${saleData.product_name} - Bs.${saleData.amount}`,
+        );
+      } else if (aiResponse.intent === 'chat' && aiResponse.chatResponse) {
+        // Responder directamente con la respuesta del chatbot conversacional
+        await this.whatsappService.sendMessage(phone, aiResponse.chatResponse);
+      }
     } catch (error) {
-      this.logger.error(`Error procesando venta: ${error.message}`);
+      this.logger.error(`Error procesando mensaje: ${error.message}`);
       await this.whatsappService.sendMessage(
         phone,
-        `❌ No pude procesar tu venta.\n\n` +
-        `Intenta de nuevo con un mensaje más claro, por ejemplo:\n` +
-        `"Vendí 2 empanadas a 10 bolivianos en efectivo"`,
+        `❌ No pude procesar tu mensaje.\n\n` +
+        `Intenta de nuevo con algo como:\n` +
+        `"Vendí 2 empanadas a 10 bolivianos en efectivo" o pregúntame "¿Cuánto he vendido hoy?"`,
       );
     }
   }

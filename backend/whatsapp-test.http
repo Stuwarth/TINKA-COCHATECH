@@ -1,0 +1,117 @@
+### Tinka WhatsApp Webhook Testing
+# Este archivo sirve para simular las peticiones que Meta (WhatsApp Cloud API) envía a tu backend.
+# Requisitos: Tener instalada la extensión "REST Client" en VS Code.
+
+@host = http://localhost:3000
+# @host = https://tu-proyecto.up.railway.app  <-- Descomenta y edita esta línea para probar en Railway
+
+@verifyToken = tinka_verify_2024
+@myPhoneNumber = 59169891022
+@activationToken = ABC12345
+@businessName = Mi Tienda de Prueba
+
+
+### 1. Verificar Webhook (GET)
+# Simula el "challenge" que Meta envía al configurar el webhook por primera vez.
+# Debería retornar un estado 200 OK y el mismo valor del "hub.challenge" (en este caso: 1158201444)
+GET {{host}}/webhook/whatsapp
+    ?hub.mode=subscribe
+    &hub.verify_token={{verifyToken}}
+    &hub.challenge=1158201444
+
+###
+
+### 2. Simular Mensaje de Texto de Venta (POST)
+# Simula que Doña María envía un mensaje de texto registrando una venta.
+# Debería retornar un estado 200 OK con { "status": "ok" }.
+# Nota: Para que el bot responda con éxito, el número @myPhoneNumber debe estar registrado y vinculado a un negocio en la Base de Datos.
+POST {{host}}/webhook/whatsapp
+Content-Type: application/json
+
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "1234567890",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15555555555",
+              "phone_number_id": "1114529715076726"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "David"
+                },
+                "wa_id": "{{myPhoneNumber}}"
+              }
+            ],
+            "messages": [
+              {
+                "from": "{{myPhoneNumber}}",
+                "id": "ABGGFlAaZZAgAhEGFoXaXoXaXoX",
+                "timestamp": "1672531199",
+                "text": {
+                  "body": "Vendí 3 empanadas a 15 bolivianos en efectivo"
+                },
+                "type": "text"
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
+
+###
+
+### 3. Simular Mensaje de Activación / Vinculación (POST)
+# Simula que un usuario envía el comando de activación para vincular su número de WhatsApp al negocio.
+# Debería retornar un estado 200 OK con { "status": "ok" } y procesar la vinculación en segundo plano.
+POST {{host}}/webhook/whatsapp
+Content-Type: application/json
+
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "1234567890",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15555555555",
+              "phone_number_id": "1114529715076726"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "David"
+                },
+                "wa_id": "{{myPhoneNumber}}"
+              }
+            ],
+            "messages": [
+              {
+                "from": "{{myPhoneNumber}}",
+                "id": "ABGGFlAaZZAgAhEGFoXaXoXaXoX",
+                "timestamp": "1672531199",
+                "text": {
+                  "body": "ACTIVAR:{{activationToken}}:{{businessName}}"
+                },
+                "type": "text"
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
