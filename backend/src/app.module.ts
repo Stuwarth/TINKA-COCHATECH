@@ -1,9 +1,22 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './modules/auth/auth.module';
+import { SalesModule } from './modules/sales/sales.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { BusinessesModule } from './modules/businesses/businesses.module';
+import { CoachModule } from './modules/coach/coach.module';
+import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
-  imports: [],
+  imports: [
+    AuthModule,
+    SalesModule,
+    ReportsModule,
+    BusinessesModule,
+    CoachModule,
+    WhatsappModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
