@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { ArrowUpRight, TrendingUp, Target, RefreshCw, FileText, Calendar, Activity, ShoppingBag, Eye, EyeOff } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, YAxis, CartesianGrid } from 'recharts';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, TrendingUp, RefreshCw } from 'lucide-react';
 import api from '../api';
 
 export default function Dashboard({ balance, transactions, userName, businessName, business }) {
@@ -55,7 +54,6 @@ export default function Dashboard({ balance, transactions, userName, businessNam
     setLoading(false);
   };
 
-  const displayTransactions = todaySales.length > 0
   // Usar datos del backend si existen, sino los props/localStorage
   const displayTransactions = loadedFromBackend
     ? todaySales.map(s => ({
