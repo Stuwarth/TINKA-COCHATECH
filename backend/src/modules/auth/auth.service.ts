@@ -28,19 +28,20 @@ export class AuthService {
    */
   async login(loginDto: LoginDto) {
     // Buscar usuario por teléfono
-    const { data: user, error } = await this.supabase
+    const { data: users, error } = await this.supabase
       .from('users')
       .select('*')
       .eq('phone', loginDto.phone)
-      .eq('status', 'active')
-      .single();
+      .eq('status', 'active');
 
-    if (error || !user) {
+    if (error || !users || users.length === 0) {
       throw new UnauthorizedException('Usuario no encontrado. Verifica tu número de teléfono.');
     }
 
-    // Comparar PIN
-    if (user.pin !== loginDto.pin) {
+    // Comparar PIN entre los usuarios encontrados (en caso de haber números duplicados)
+    const user = users.find((u: any) => u.pin === loginDto.pin);
+
+    if (!user) {
       throw new UnauthorizedException('PIN incorrecto');
     }
 
