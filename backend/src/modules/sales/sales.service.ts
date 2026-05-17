@@ -55,12 +55,12 @@ export class SalesService {
   async listSales(
     from?: string,
     to?: string,
-    userId?: string,
+    businessId?: string,
   ): Promise<Sale[]> {
     let query = supabase.from('sales').select('*');
 
-    if (userId) {
-      query = query.eq('user_id', userId);
+    if (businessId) {
+      query = query.eq('business_id', businessId);
     }
 
     if (from) {
@@ -84,39 +84,39 @@ export class SalesService {
     return data ?? [];
   }
 
-  async getSalesToday(userId?: string): Promise<Sale[]> {
+  async getSalesToday(businessId?: string): Promise<Sale[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return this.listSales(today.toISOString(), tomorrow.toISOString(), userId);
+    return this.listSales(today.toISOString(), tomorrow.toISOString(), businessId);
   }
 
-  async getSalesLastWeek(userId?: string): Promise<Sale[]> {
+  async getSalesLastWeek(businessId?: string): Promise<Sale[]> {
     const today = new Date();
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    return this.listSales(weekAgo.toISOString(), today.toISOString(), userId);
+    return this.listSales(weekAgo.toISOString(), today.toISOString(), businessId);
   }
 
   async getTotalSales(
     from: string,
     to: string,
-    userId?: string,
+    businessId?: string,
   ): Promise<number> {
-    const sales = await this.listSales(from, to, userId);
+    const sales = await this.listSales(from, to, businessId);
     return sales.reduce((sum, sale) => sum + sale.amount, 0);
   }
 
   async getSalesByPaymentMethod(
     from: string,
     to: string,
-    userId?: string,
+    businessId?: string,
   ): Promise<Array<{ payment_method: string; amount: number }>> {
-    const sales = await this.listSales(from, to, userId);
+    const sales = await this.listSales(from, to, businessId);
     const grouped = sales.reduce<Record<string, number>>((acc, sale) => {
       const method = sale.payment_method;
       if (!acc[method]) {
