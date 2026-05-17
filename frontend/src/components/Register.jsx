@@ -1,9 +1,34 @@
 import { useState } from 'react';
 import logoTinka from '../assets/img/logoTinka.png';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Mail, User, Lock, Smartphone, KeyRound, Store, Tag, FileText } from 'lucide-react';
+
+function InputField({ icon: Icon, label, name, type = 'text', placeholder, maxLength, centered, value, onChange, error }) {
+  return (
+    <div>
+      <label className="block text-[11px] uppercase tracking-wider font-bold text-[#002C6A] mb-2 ml-1">{label}</label>
+      <div className={`flex items-center bg-white border ${error ? 'border-red-400' : 'border-[#ebebeb]'} rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] overflow-hidden hover:border-[#3FB6DA]/50 focus-within:border-[#E6007E] focus-within:shadow-[0_0_0_3px_rgba(230,0,126,0.08)] transition-all`}>
+        <div className="pl-4 pr-1 text-[#002C6A]/40">
+          <Icon size={18} strokeWidth={2} />
+        </div>
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className={`w-full px-3 py-3.5 bg-transparent focus:outline-none text-[#002C6A] font-semibold text-sm placeholder:text-[#ccc] placeholder:font-normal ${centered ? 'text-center tracking-[0.5em] text-lg' : ''}`}
+        />
+      </div>
+      {error && (
+        <p className="text-[#E6007E] text-[11px] mt-1.5 ml-1 font-medium">{error}</p>
+      )}
+    </div>
+  );
+}
 
 export default function Register({ onRegister, onBackToLogin }) {
-  const [step, setStep] = useState(1); // paso 1: datos personales, paso 2: datos negocio
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
@@ -62,7 +87,7 @@ export default function Register({ onRegister, onBackToLogin }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!validateStep2()) return;
 
     setLoading(true);
@@ -78,227 +103,99 @@ export default function Register({ onRegister, onBackToLogin }) {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white font-sans">
-      {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-[#ebebeb]">
+    <div className="flex flex-col h-full bg-[#fafbfc] font-sans animate-in fade-in duration-500">
+      {/* Header Sticky Impeccable */}
+      <div className="flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-md relative z-30 border-b border-[#f0f0f0] sticky top-0">
         <button
           onClick={step === 1 ? onBackToLogin : () => setStep(1)}
-          className="flex items-center gap-2 text-[#888]"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f5f5f5] active:scale-90 transition-all text-[#002C6A]"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={22} strokeWidth={2.5} />
         </button>
-        <img src={logoTinka} alt="Tinka" className="h-6 object-contain opacity-90" />
-        <div className="w-8" />
+        <img src={logoTinka} alt="Tinka" className="h-6 object-contain" />
+        <div className="w-10" />
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {step === 1 ? (
-          <div className="max-w-md mx-auto">
-             <h2 className="text-2xl font-bold mb-1">Crea tu cuenta</h2>
-             <p className="text-sm text-[#888] mb-6">
-               Ingresa tus datos personales para comenzar
-             </p>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Mini Banner Magenta */}
+        <div className="bg-[#E6007E] text-white py-4 px-6 text-center">
+          <h1 className="text-lg font-extrabold tracking-wide">
+            {step === 1 ? 'Datos Personales' : 'Tu Negocio'}
+          </h1>
+          <p className="text-[11px] font-medium opacity-90 mt-1">
+            Paso {step} de 2
+          </p>
+        </div>
 
-             <form className="space-y-3">
-               <div>
-                 <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                   placeholder="email@ejemplo.com"
-                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black ${
-                     errors.email ? 'border-red-500' : 'border-[#ebebeb]'
-                   }`}
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                )}
-              </div>
+        {/* Step Indicator */}
+        <div className="flex gap-2 px-8 mt-5 mb-6">
+          <div className={`flex-1 h-1 rounded-full transition-all duration-500 ${step >= 1 ? 'bg-[#E6007E]' : 'bg-[#ebebeb]'}`} />
+          <div className={`flex-1 h-1 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-[#E6007E]' : 'bg-[#ebebeb]'}`} />
+        </div>
 
+        {/* Form Content */}
+        <div className="px-6 pb-8">
+          {step === 1 ? (
+            <div className="space-y-4">
+              <InputField icon={Mail} label="Correo electrónico" name="email" type="email" placeholder="email@ejemplo.com" value={formData.email} onChange={handleChange} error={errors.email} />
+              <InputField icon={User} label="Nombres y Apellidos" name="full_name" placeholder="Juan Pérez" value={formData.full_name} onChange={handleChange} error={errors.full_name} />
+              <InputField icon={Lock} label="Contraseña" name="password" type="password" placeholder="Mínimo 6 caracteres" value={formData.password} onChange={handleChange} error={errors.password} />
+              <InputField icon={Smartphone} label="Celular (WhatsApp)" name="phone" type="tel" placeholder="68549537" value={formData.phone} onChange={handleChange} error={errors.phone} />
+              <InputField icon={KeyRound} label="PIN de Seguridad" name="pin" type="password" placeholder="0000" maxLength="4" centered value={formData.pin} onChange={handleChange} error={errors.pin} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <InputField icon={Store} label="Nombre del Negocio" name="business_name" placeholder="Mi Tienda" value={formData.business_name} onChange={handleChange} error={errors.business_name} />
+              <InputField icon={Tag} label="Categoría (Opcional)" name="category" placeholder="Tienda, Restaurante..." value={formData.category} onChange={handleChange} error={errors.category} />
               <div>
-                 <label className="block text-sm font-medium mb-1">
-                   Nombre Completo
-                 </label>
-                 <input
-                   type="text"
-                   name="full_name"
-                   value={formData.full_name}
-                   onChange={handleChange}
-                   placeholder="Juan Pérez"
-                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black ${
-                     errors.full_name ? 'border-red-500' : 'border-[#ebebeb]'
-                   }`}
-                 />
-                 {errors.full_name && (
-                   <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>
-                 )}
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium mb-1">
-                   Contraseña
-                 </label>
-                 <input
-                   type="password"
-                   name="password"
-                   value={formData.password}
-                   onChange={handleChange}
-                   placeholder="••••••"
-                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black ${
-                     errors.password ? 'border-red-500' : 'border-[#ebebeb]'
-                   }`}
-                 />
-                 {errors.password && (
-                   <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-                 )}
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium mb-1">
-                   Teléfono (WhatsApp)
-                 </label>
-                 <input
-                   type="tel"
-                   name="phone"
-                   value={formData.phone}
-                   onChange={handleChange}
-                   placeholder="68549537"
-                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black ${
-                     errors.phone ? 'border-red-500' : 'border-[#ebebeb]'
-                   }`}
-                 />
-                 {errors.phone && (
-                   <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-                 )}
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium mb-1">
-                   PIN de Seguridad (4 dígitos)
-                 </label>
-                 <input
-                   type="password"
-                   name="pin"
-                   value={formData.pin}
-                   onChange={handleChange}
-                   placeholder="0000"
-                   maxLength="4"
-                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black ${
-                     errors.pin ? 'border-red-500' : 'border-[#ebebeb]'
-                   }`}
-                 />
-                 {errors.pin && (
-                   <p className="text-red-500 text-xs mt-1">{errors.pin}</p>
-                 )}
-               </div>
-
-              {errors.submit && (
-                <p className="text-red-500 text-sm bg-red-50 p-3 rounded">
-                  {errors.submit}
-                </p>
-              )}
-            </form>
-          </div>
-        ) : (
-          <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-bold mb-1">Tu Negocio</h2>
-            <p className="text-sm text-[#888] mb-6">
-              Cuéntanos sobre tu negocio
-            </p>
-
-            <form className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Nombre del Negocio *
-                </label>
-                <input
-                  type="text"
-                  name="business_name"
-                  value={formData.business_name}
-                  onChange={handleChange}
-                  placeholder="Mi Tienda"
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black ${
-                    errors.business_name ? 'border-red-500' : 'border-[#ebebeb]'
-                  }`}
-                />
-                {errors.business_name && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.business_name}
-                  </p>
-                )}
+                <label className="block text-[11px] uppercase tracking-wider font-bold text-[#002C6A] mb-2 ml-1">Descripción (Opcional)</label>
+                <div className="bg-white border border-[#ebebeb] rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] overflow-hidden hover:border-[#3FB6DA]/50 focus-within:border-[#E6007E] focus-within:shadow-[0_0_0_3px_rgba(230,0,126,0.08)] transition-all p-1">
+                  <div className="flex items-start gap-2 px-3 pt-2">
+                    <FileText size={18} strokeWidth={2} className="text-[#002C6A]/40 mt-0.5 shrink-0" />
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Cuéntanos sobre tu negocio..."
+                      rows="3"
+                      className="w-full bg-transparent focus:outline-none text-[#002C6A] font-semibold text-sm placeholder:text-[#ccc] placeholder:font-normal resize-none"
+                    />
+                  </div>
+                </div>
               </div>
+            </div>
+          )}
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Categoría (Opcional)
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  placeholder="Ej: Tienda, Restaurante, Servicios"
-                  className="w-full px-4 py-2 border border-[#ebebeb] rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
+          {errors.submit && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-[#E6007E] text-sm font-medium text-center">{errors.submit}</p>
+            </div>
+          )}
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Descripción (Opcional)
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Cuéntanos sobre tu negocio..."
-                  rows="3"
-                  className="w-full px-4 py-2 border border-[#ebebeb] rounded-lg focus:outline-none focus:ring-2 focus:ring-black resize-none"
-                />
-              </div>
-
-              {errors.submit && (
-                <p className="text-red-500 text-sm bg-red-50 p-3 rounded">
-                  {errors.submit}
-                </p>
-              )}
-            </form>
-          </div>
-        )}
-      </div>
-
-      {/* Footer/Actions */}
-      <div className="border-t border-[#ebebeb] p-6 space-y-3">
-        <button
-          onClick={step === 1 ? handleNextStep : handleSubmit}
-          disabled={loading}
-          className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-[#1a1a1a] disabled:opacity-50 transition-colors"
-        >
-          {loading
-            ? 'Registrando...'
-            : step === 1
-              ? 'Siguiente'
-              : 'Crear Cuenta'}
-        </button>
-        {step === 1 && (
+          {/* CTA Button */}
           <button
-            onClick={onBackToLogin}
-            className="w-full bg-[#f5f5f5] text-black py-3 rounded-lg font-medium hover:bg-[#ebebeb] transition-colors"
+            onClick={step === 1 ? handleNextStep : handleSubmit}
+            disabled={loading}
+            className="w-full mt-8 bg-[#E6007E] text-white py-4 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-[#c20068] disabled:opacity-50 transition-all active:scale-[0.98] shadow-[0_8px_25px_rgba(230,0,126,0.3)]"
           >
-            Volver
+            {loading
+              ? 'Enviando...'
+              : step === 1
+                ? 'Siguiente →'
+                : 'Crear Cuenta'}
           </button>
-        )}
+
+          {step === 1 && (
+            <button
+              onClick={onBackToLogin}
+              className="w-full mt-3 py-3 text-[#002C6A] font-bold text-xs uppercase tracking-widest hover:bg-[#002C6A]/5 rounded-2xl transition-all active:scale-[0.98]"
+            >
+              Ya tengo cuenta
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-
-

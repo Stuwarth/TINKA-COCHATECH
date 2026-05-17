@@ -18,6 +18,3 @@ import { WhatsappService } from '../../common/services/whatsapp.service';
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
-
-
-
