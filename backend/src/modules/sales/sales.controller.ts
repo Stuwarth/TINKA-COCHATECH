@@ -1,37 +1,79 @@
-import { Body, Controller, Get, Post, Query, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards, Request, Headers, ForbiddenException } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ListSalesDto } from './dto/list-sales.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { supabase } from '../../config/supabase.config';
 
 @Controller('sales')
+@UseGuards(JwtAuthGuard)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
-  @UseGuards(JwtAuthGuard)
+  private async validateBusinessOwnership(businessId: string | undefined, userId: string): Promise<void> {
+    if (!businessId) {
+      throw new ForbiddenException('Negocio no especificado (x-business-id header requerido)');
+    }
+
+    const { data, error } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('id', businessId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !data) {
+      throw new ForbiddenException('No tienes acceso a este negocio o el negocio no existe');
+    }
+  }
+
   @Post()
-  async create(@Request() req, @Body() createSaleDto: CreateSaleDto) {
-    return this.salesService.createSale(createSaleDto, req.user.sub);
+  async create(
+    @Request() req,
+    @Headers('x-business-id') businessId: string,
+    @Body() createSaleDto: CreateSaleDto,
+  ) {
+    const userId = req.user.sub;
+    const finalBusinessId = businessId || createSaleDto.business_id;
+    await this.validateBusinessOwnership(finalBusinessId, userId);
+    return this.salesService.createSale({
+      ...createSaleDto,
+      business_id: finalBusinessId,
+    }, userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
-  async list(@Request() req, @Query() query: ListSalesDto) {
-    const sales = await this.salesService.listSales(query.from, query.to, req.user.sub);
+  async list(
+    @Request() req,
+    @Headers('x-business-id') businessId: string,
+    @Query() query: ListSalesDto,
+  ) {
+    const userId = req.user.sub;
+    await this.validateBusinessOwnership(businessId, userId);
+    const sales = await this.salesService.listSales(query.from, query.to, businessId);
     return sales || [];
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('today')
-  async today(@Request() req) {
-    const sales = await this.salesService.getSalesToday(req.user.sub);
+  async today(
+    @Request() req,
+    @Headers('x-business-id') businessId: string,
+  ) {
+    const userId = req.user.sub;
+    await this.validateBusinessOwnership(businessId, userId);
+    const sales = await this.salesService.getSalesToday(businessId);
     return sales || [];
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('summary')
-  async summary(@Request() req) {
-    const salesLastWeek = await this.salesService.getSalesLastWeek(req.user.sub);
+  async summary(
+    @Request() req,
+    @Headers('x-business-id') businessId: string,
+  ) {
+    const userId = req.user.sub;
+    await this.validateBusinessOwnership(businessId, userId);
+
+    const salesLastWeek = await this.salesService.getSalesLastWeek(businessId);
     const totalWeek = salesLastWeek.reduce((sum, sale) => sum + sale.amount, 0);
 
     // Preparar datos para los últimos 5 días
@@ -73,7 +115,11 @@ export class SalesController {
     const yesterday = last5Days[last5Days.length - 2]?.amount || 1;
     const percentageUp = ((today - yesterday) / yesterday) * 100;
 
+    const allSales = await this.salesService.listSales(undefined, undefined, businessId);
+    const totalBalanceEver = allSales.reduce((sum, sale) => Number(sum) + Number(sale.amount), 0);
+
     return {
+      total_balance: totalBalanceEver,
       total_week: totalWeek,
       health_status: healthStatus,
       percentage_up: Math.round(percentageUp),
