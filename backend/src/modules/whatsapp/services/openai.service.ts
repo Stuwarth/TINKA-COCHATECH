@@ -14,18 +14,18 @@ export interface OpenAIResponse {
 @Injectable()
 export class OpenaiService {
   private readonly logger = new Logger(OpenaiService.name);
-  private readonly apiUrl = 'https://models.inference.ai.azure.com/chat/completions';
+  private readonly apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
   private readonly apiKey: string;
 
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || '';
+    this.apiKey = process.env.GROQ_API_KEY || '';
     if (!this.apiKey) {
-      this.logger.warn('⚠️ OPENAI_API_KEY (GitHub Models Token) no configurada en las variables de entorno.');
+      this.logger.warn('⚠️ GROQ_API_KEY no configurada en las variables de entorno.');
     }
   }
 
   /**
-   * Envía el mensaje del usuario a la IA de GitHub Models (gpt-4o-mini).
+   * Envía el mensaje del usuario a la IA de Groq (llama-3.3-70b-versatile).
    * Clasifica la intención: "sale" (registro de venta) o "chat" (pregunta general / coach).
    * @param text Mensaje de texto del usuario
    * @param businessContext Información sobre el negocio y sus ventas de hoy
@@ -34,7 +34,7 @@ export class OpenaiService {
   async classifyAndProcess(text: string, businessContext: { businessName: string; todaySales: any[] }): Promise<OpenAIResponse> {
     try {
       if (!this.apiKey) {
-        throw new Error('OPENAI_API_KEY no está configurada.');
+        throw new Error('GROQ_API_KEY no está configurada.');
       }
 
       // Convertir ventas de hoy a un formato legible para el prompt
@@ -76,7 +76,7 @@ REGLAS DE CLASIFICACIÓN:
 3. En las respuestas conversacionales ("chatResponse"), sé extremadamente empático, usa modismos bolivianos amables de forma sutil y profesional ("¡Hola!", "¡Excelente!", "fuerza emprendedor/a"), mantén las respuestas concisas (ideales para leer en WhatsApp) y usa emojis de forma agradable.
 4. Si te preguntan sobre las ventas de hoy, usa los datos del CONTEXTO DEL NEGOCIO HOY para darles un resumen detallado y motivador.`;
 
-      this.logger.log(`Enviando mensaje a GitHub Models gpt-4o-mini...`);
+      this.logger.log(`Enviando mensaje a Groq (llama-3.3-70b-versatile)...`);
 
       const response = await fetch(this.apiUrl, {
         method: 'POST',
@@ -85,7 +85,7 @@ REGLAS DE CLASIFICACIÓN:
           'Authorization': `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: text },
@@ -98,8 +98,8 @@ REGLAS DE CLASIFICACIÓN:
 
       if (!response.ok) {
         const errorDetails = await response.text();
-        this.logger.error(`Error en la API de GitHub Models: Status ${response.status} | ${errorDetails}`);
-        throw new Error(`API de GitHub Models falló con estado ${response.status}`);
+        this.logger.error(`Error en la API de Groq: Status ${response.status} | ${errorDetails}`);
+        throw new Error(`API de Groq falló con estado ${response.status}`);
       }
 
       const responseData = await response.json();
