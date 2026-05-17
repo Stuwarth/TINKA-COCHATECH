@@ -4,6 +4,7 @@ import { Delete, Check, Mic, ShoppingBag } from 'lucide-react';
 export default function NuevaVenta({ onAddTransaction }) {
   const [amount, setAmount] = useState('0');
   const [method, setMethod] = useState('efectivo');
+  const [location, setLocation] = useState('Tienda');
   const [productName, setProductName] = useState('');
   const [step, setStep] = useState('input'); // input | qr_display | success
   const [isListening, setIsListening] = useState(false);
@@ -94,7 +95,7 @@ export default function NuevaVenta({ onAddTransaction }) {
   };
 
   const finalizePayment = () => {
-    if (onAddTransaction) onAddTransaction(amount, method, productName || 'Venta Rápida');
+    if (onAddTransaction) onAddTransaction(amount, method, productName || 'Venta Rpida', location);
     setStep('success');
     setTimeout(() => { 
       setStep('input'); 
@@ -178,9 +179,29 @@ export default function NuevaVenta({ onAddTransaction }) {
             type="text"
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
-            placeholder="¿Qué vendiste? (ej: 5 Salteñas)"
+            placeholder="Qu vendiste? (ej: 5 Salteas)"
             className="flex-1 bg-transparent text-sm text-[#002C6A] font-medium placeholder:text-[#bbb] focus:outline-none"
           />
+        </div>
+
+        {/* Ubicacin Selector */}
+        <div className="w-full mt-4 flex gap-2">
+          {['Tienda', 'Feria', 'Delivery'].map((loc) => (
+            <button
+              key={loc}
+              onClick={() => setLocation(loc)}
+              className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold transition-all border ${
+                location === loc 
+                  ? 'bg-[#E6007E]/10 border-[#E6007E] text-[#E6007E]' 
+                  : 'bg-white border-[#ebebeb] text-[#888] hover:bg-[#f5f5f5]'
+              }`}
+            >
+              {loc === 'Tienda' && ' 🏪 '}
+              {loc === 'Feria' && ' 🎪 '}
+              {loc === 'Delivery' && ' 🛵 '}
+              {loc}
+            </button>
+          ))}
         </div>
       </div>
 

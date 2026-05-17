@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Download, FileText, Calendar, Filter, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Calendar, Filter, ArrowUpRight, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import api from '../api';
 import logoTinka from '../assets/img/logoTinka.png';
 
@@ -66,6 +67,21 @@ export default function Reportes() {
 
   const filteredData = getFilteredTransactions();
   const totalAmount = filteredData.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+  // Data for Donut Chart
+  const paymentMethodData = filteredData.reduce((acc, sale) => {
+    const method = sale.payment_method || sale.method || 'Efectivo';
+    const amount = Number(sale.amount) || 0;
+    const existing = acc.find(item => item.name === method);
+    if (existing) {
+      existing.value += amount;
+    } else {
+      acc.push({ name: method, value: amount });
+    }
+    return acc;
+  }, []);
+  
+  const COLORS = ['#E6007E', '#3FB6DA', '#002C6A', '#FBB03B'];
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -180,6 +196,37 @@ export default function Reportes() {
             <TrendingUp size={24} />
           </div>
         </div>
+
+        {/* Payment Method Chart */}
+        {paymentMethodData.length > 0 && (
+          <div className="bg-white rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-[#ebebeb] mb-6">
+            <h2 className="text-sm font-bold text-[#002C6A] mb-2 flex items-center gap-2">
+              <PieChartIcon size={16} className="text-[#3FB6DA]" />
+              Desglose por Mtodo de Pago
+            </h2>
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={paymentMethodData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {paymentMethodData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip formatter={(value) => `Bs. ${value.toFixed(2)}`} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         {/* Filters & Actions */}
         <div className="flex flex-col gap-4 mb-6">
