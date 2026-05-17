@@ -33,6 +33,9 @@ export class WhatsappWebhookService {
     const cleanPhone = senderPhone.replace(/\D/g, '');
     this.logger.log(`Mensaje recibido de ${cleanPhone} | Tipo: ${message.type}`);
 
+    // Marcar como leído inmediatamente para mejorar la UX
+    this.whatsappService.markAsRead(message.id).catch(() => {});
+
     // === PASO 1: ¿Es un mensaje de activación? ===
     if (message.type === 'text' && message.text?.body?.startsWith('ACTIVAR:')) {
       await this.handleActivation(cleanPhone, message.text.body);
@@ -158,10 +161,24 @@ export class WhatsappWebhookService {
       } else if (message.type === 'text' && message.text?.body) {
         source = 'whatsapp_text';
         text = message.text.body;
+      } else if (message.type === 'interactive' && message.interactive) {
+        source = 'whatsapp_interactive';
+        text =
+          message.interactive.button_reply?.title ||
+          message.interactive.list_reply?.title ||
+          '';
+
+        if (!text) {
+          await this.whatsappService.sendMessage(
+            phone,
+            '⚠️ Opción interactiva no válida o vacía. Por favor escribe tu mensaje.',
+          );
+          return;
+        }
       } else {
         await this.whatsappService.sendMessage(
           phone,
-          '📝 Solo puedo procesar *textos* y *audios* para registrar ventas o conversar conmigo.\n\nEjemplo: "Vendí 3 jugos a 15bs por QR" o pregúntame "¿Cuánto vendí hoy?"',
+          '📝 Solo puedo procesar *textos*, *audios* y *opciones interactivas* para registrar ventas o conversar conmigo.\n\nEjemplo: "Vendí 3 jugos a 15bs por QR" o pregúntame "¿Cuánto vendí hoy?"',
         );
         return;
       }

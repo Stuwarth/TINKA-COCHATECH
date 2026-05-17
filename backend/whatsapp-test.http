@@ -2,13 +2,16 @@
 # Este archivo sirve para simular las peticiones que Meta (WhatsApp Cloud API) envía a tu backend.
 # Requisitos: Tener instalada la extensión "REST Client" en VS Code.
 
-@host = http://localhost:3000
+@host = https://tinka-cochatech.up.railway.app
 # @host = https://tu-proyecto.up.railway.app  <-- Descomenta y edita esta línea para probar en Railway
 
 @verifyToken = tinka_verify_2024
 @myPhoneNumber = 59169891022
 @activationToken = ABC12345
 @businessName = Mi Tienda de Prueba
+
+@phoneNumberId = 1114529715076726
+@accessToken = EAAhlfP24ItYBRUZBwfY2GYpMDIptnVGOxlAqQ3xkPKZAaMI2qnTkw2A8O8ZC8grDLvwIrqI0LDaVmMQOMaLgjI1ZA2keAdqOG2ZCFdPGKiwer4ilYqL4NKjOpfWevKfgrcyCQNW0pDzvqdR0hVgBp4o47XBLAwLP1HzLCdl0hfFHH8PQafFQ13ZCGAVZABGUKHihgZDZD
 
 
 ### 1. Verificar Webhook (GET)
@@ -114,4 +117,43 @@ Content-Type: application/json
       ]
     }
   ]
+}
+
+###
+
+### 4. Enviar Mensaje Directo vía API de Meta (POST)
+# Prueba enviar un mensaje de WhatsApp directo a un número de destino usando la API de Meta.
+# Sirve para validar que tus credenciales de salida son válidas y que el número destino está verificado/permitido por Meta.
+POST https://graph.facebook.com/v21.0/{{phoneNumberId}}/messages
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "messaging_product": "whatsapp",
+  "to": "59161615728",
+  "type": "text",
+  "text": {
+    "body": "12222222222222"
+  }
+}
+
+###
+
+### 5. Enviar Plantilla Directa (Template) vía API de Meta (POST)
+# Prueba enviar un mensaje de plantilla (template) directo usando la API de Meta.
+# Nota: La plantilla "3p_direct_integration_test_template" debe estar registrada y aprobada en tu cuenta de Meta Developers.
+POST https://graph.facebook.com/v25.0/{{phoneNumberId}}/messages
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "messaging_product": "whatsapp",
+  "to": "59161615728",
+  "type": "template",
+  "template": {
+    "name": "3p_direct_integration_test_template",
+    "language": {
+      "code": "es_LA"
+    }
+  }
 }

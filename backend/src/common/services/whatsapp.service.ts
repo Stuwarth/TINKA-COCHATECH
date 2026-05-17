@@ -101,6 +101,130 @@ export class WhatsappService {
   }
 
   /**
+   * Envía un mensaje con botones interactivos (hasta 3 botones).
+   */
+  async sendButtonsMessage(
+    to: string,
+    body: string,
+    options: string[],
+  ): Promise<void> {
+    try {
+      const cleanPhone = to.replace(/\D/g, '');
+      const buttons = options.slice(0, 3).map((option, index) => ({
+        type: 'reply' as const,
+        reply: {
+          id: `btn_${index + 1}`,
+          title: option.slice(0, 20),
+        },
+      }));
+
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: cleanPhone,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: { text: body },
+            action: { buttons },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.error(`Error Meta API (botones): ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error al enviar mensaje interactivo con botones: ${error.message}`);
+    }
+  }
+
+  /**
+   * Envía un menú interactivo con una lista de opciones (hasta 10 elementos).
+   */
+  async sendMenuMessage(
+    to: string,
+    body: string,
+    buttonTitle: string,
+    items: Array<{ id: string; title: string; description?: string }>,
+  ): Promise<void> {
+    try {
+      const cleanPhone = to.replace(/\D/g, '');
+      const rows = items.slice(0, 10).map((item) => ({
+        id: item.id,
+        title: item.title.slice(0, 24),
+        description: item.description?.slice(0, 72) ?? '',
+      }));
+
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: cleanPhone,
+          type: 'interactive',
+          interactive: {
+            type: 'list',
+            body: { text: body },
+            action: {
+              button: buttonTitle,
+              sections: [
+                {
+                  title: 'Opciones disponibles',
+                  rows,
+                },
+              ],
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.error(`Error Meta API (lista): ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error al enviar mensaje de lista interactiva: ${error.message}`);
+    }
+  }
+
+  /**
+   * Marca un mensaje como leído para mostrar los ticks azules.
+   */
+  async markAsRead(messageId: string): Promise<void> {
+    try {
+      const response = await fetch(this.graphApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          status: 'read',
+          message_id: messageId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.debug(`Error Meta API (marcar leído): ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error al marcar mensaje como leído: ${error.message}`);
+    }
+  }
+
+  /**
    * Construye el link wa.me con mensaje pre-llenado para activar un negocio.
    * El usuario abre este link → WhatsApp se abre → él envía el mensaje.
    * @param activationToken Token de activación del negocio

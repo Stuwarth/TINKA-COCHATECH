@@ -40,13 +40,25 @@ export interface WhatsAppMessage {
   from: string;
   id: string;
   timestamp: string;
-  type: 'text' | 'audio' | 'image' | 'document' | 'video' | 'location' | 'reaction';
+  type: 'text' | 'audio' | 'image' | 'document' | 'video' | 'location' | 'reaction' | 'interactive';
   text?: {
     body: string;
   };
   audio?: {
     id: string;
     mime_type: string;
+  };
+  interactive?: {
+    type: string;
+    button_reply?: {
+      id: string;
+      title: string;
+    };
+    list_reply?: {
+      id: string;
+      title: string;
+      description?: string;
+    };
   };
 }
 
