@@ -14,23 +14,31 @@ function App() {
   const [user, setUser] = useState(api.getCurrentUser());
   const [business, setBusiness] = useState(api.getCurrentBusiness());
 
-  // Estado de Ventas (persistido en localStorage)
+  // Estado de Ventas (persistido en localStorage e aislado por Negocio)
   const [balance, setBalance] = useState(() => {
-    const sales = JSON.parse(localStorage.getItem('local_sales') || '[]');
+    const activeBiz = api.getCurrentBusiness();
+    const key = activeBiz?.id ? `local_sales_${activeBiz.id}` : 'local_sales_guest';
+    const sales = JSON.parse(localStorage.getItem(key) || '[]');
     return sales.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
   });
 
   const [transactions, setTransactions] = useState(() => {
-    const sales = JSON.parse(localStorage.getItem('local_sales') || '[]');
+    const activeBiz = api.getCurrentBusiness();
+    const key = activeBiz?.id ? `local_sales_${activeBiz.id}` : 'local_sales_guest';
+    const sales = JSON.parse(localStorage.getItem(key) || '[]');
     return sales.slice(0, 20); // Últimas 20
   });
 
   const handleLogin = (data) => {
     setIsAuthenticated(true);
-    setUser(data?.user || api.getCurrentUser());
-    setBusiness(data?.business || api.getCurrentBusiness());
-    // Recargar ventas del localStorage
-    const sales = JSON.parse(localStorage.getItem('local_sales') || '[]');
+    const activeUser = data?.user || api.getCurrentUser();
+    const activeBusiness = data?.business || api.getCurrentBusiness();
+    setUser(activeUser);
+    setBusiness(activeBusiness);
+    
+    // Recargar ventas del localStorage utilizando la clave del negocio ingresado
+    const key = activeBusiness?.id ? `local_sales_${activeBusiness.id}` : 'local_sales_guest';
+    const sales = JSON.parse(localStorage.getItem(key) || '[]');
     setTransactions(sales.slice(0, 20));
     setBalance(sales.reduce((sum, s) => sum + (s.amount || 0), 0));
   };
@@ -45,13 +53,16 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Limpiar caché local del negocio actual para máxima privacidad
+    const key = business?.id ? `local_sales_${business.id}` : 'local_sales_guest';
+    localStorage.removeItem(key);
+
     api.logout();
     setIsAuthenticated(false);
     setUser(null);
     setBusiness(null);
     setTransactions([]);
     setBalance(0);
-    localStorage.removeItem('local_sales'); // Limpiar el caché local para evitar fugas entre cuentas de prueba
   };
 
   const handleAddTransaction = (amountStr, method, productName) => {
@@ -71,10 +82,11 @@ function App() {
     setTransactions(updatedTxs);
     setBalance(prev => prev + amount);
 
-    // Persistir en localStorage
-    const allSales = JSON.parse(localStorage.getItem('local_sales') || '[]');
+    // Persistir en localStorage de forma aislada por Negocio
+    const key = business?.id ? `local_sales_${business.id}` : 'local_sales_guest';
+    const allSales = JSON.parse(localStorage.getItem(key) || '[]');
     allSales.unshift(newTx);
-    localStorage.setItem('local_sales', JSON.stringify(allSales));
+    localStorage.setItem(key, JSON.stringify(allSales));
 
     // Intentar enviar al backend también
     api.createSale({
