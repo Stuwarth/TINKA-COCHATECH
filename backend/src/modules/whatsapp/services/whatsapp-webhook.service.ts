@@ -184,7 +184,7 @@ export class WhatsappWebhookService {
       }
 
       // Obtener ventas del día actual del negocio para el contexto de la IA
-      const todaySales = await this.salesService.getSalesToday(business.user_id);
+      const todaySales = await this.salesService.getSalesToday(business.id);
 
       // Clasificar y procesar con OpenAI (GitHub Models)
       const aiResponse = await this.openaiService.classifyAndProcess(text, {
