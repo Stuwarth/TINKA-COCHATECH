@@ -1,5 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+interface SaleData {
+  quantity: number;
+  product_name: string;
+  amount: number;
+  payment_method: string;
+}
+
+interface BusinessContext {
+  businessName: string;
+  todaySales: SaleData[];
+}
+
 export interface OpenAIResponse {
   intent: 'sale' | 'chat';
   saleData?: {
@@ -7,7 +19,7 @@ export interface OpenAIResponse {
     quantity: number;
     amount: number;
     payment_method: 'Efectivo' | 'QR' | 'Transferencia' | 'Tarjeta';
-    location: 'Tienda' | 'Feria' | 'Delivery' | string;
+    location: 'Tienda' | 'Feria' | 'Delivery';
   };
   chatResponse?: string;
 }
@@ -36,7 +48,7 @@ export class OpenaiService {
    */
   async classifyAndProcess(
     text: string,
-    businessContext: { businessName: string; todaySales: any[] },
+    businessContext: BusinessContext,
   ): Promise<OpenAIResponse> {
     try {
       if (!this.apiKey) {
@@ -72,8 +84,8 @@ El JSON debe seguir esta estructura exacta:
     "product_name": string (ej: "Empanada de carne". NO incluyas cantidades aquí, solo el nombre del producto en singular/plural),
     "quantity": number (cantidad vendida, por defecto 1 si no se especifica),
     "amount": number (monto TOTAL en bolivianos de esta venta, ej: si vendió 2 a 5bs c/u, el monto total es 10),
-    "payment_method": "Efectivo" | "QR" | "Transferencia" | "Tarjeta" (por defecto "Efectivo" si no se especifica),
-    "location": "Tienda" | "Feria" | "Delivery" (por defecto "Tienda" si no se especifica, o el valor correspondiente si menciona cosas como "en la feria", "a domicilio", "por delivery", "en el local")
+    "payment_method": "Efectivo" | "QR" | "Transferencia" | "Tarjeta" (deduce el método de pago de palabras clave: "efectivo", "cash", "queda" = Efectivo; "qr", "codigo qr", "codigo" = QR; "transferencia", "tranferencia", "banco", "cuenta" = Transferencia; "tarjeta", "débito", "crédito" = Tarjeta. Por defecto "Efectivo" si no se especifica),
+    "location": "Tienda" | "Feria" | "Delivery" (deduce la ubicación de palabras clave: "feria", "feria municipal", "feria semanal", "mercado" = Feria; "delivery", "a domicilio", "por delivery", "envío", "enviado", "entregué", "para llevar" = Delivery; "tienda", "local", "negocio", "bodega", "quiosco" = Tienda. Por defecto "Tienda" si no se especifica)
   },
   "chatResponse": string // SOLO si "intent" es "chat". Tu respuesta conversacional, motivadora, y amable como Tinka Coach de Banco FIE.
 }
@@ -120,8 +132,14 @@ REGLAS DE CLASIFICACIÓN:
         throw new Error(`API de Groq falló con estado ${response.status}`);
       }
 
-      const responseData = await response.json();
-      const rawContent = responseData.choices?.[0]?.message?.content;
+      const responseData = (await response.json()) as Record<string, unknown>;
+      const choices = responseData.choices as
+        | Array<Record<string, unknown>>
+        | undefined;
+      const message = choices?.[0]?.message as
+        | Record<string, string>
+        | undefined;
+      const rawContent = message?.content;
 
       if (!rawContent) {
         throw new Error('Respuesta vacía recibida del modelo.');
@@ -131,8 +149,10 @@ REGLAS DE CLASIFICACIÓN:
       const parsedResponse = JSON.parse(rawContent) as OpenAIResponse;
 
       return parsedResponse;
-    } catch (error) {
-      this.logger.error(`Error en classifyAndProcess: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error desconocido';
+      this.logger.error(`Error en classifyAndProcess: ${errorMessage}`);
       // Respuesta de fallback segura
       return {
         intent: 'chat',

@@ -28,7 +28,6 @@ export class WhatsappWebhookService {
   async processIncomingMessage(
     senderPhone: string,
     message: WhatsAppMessage,
-    senderName?: string,
   ): Promise<void> {
     const cleanPhone = senderPhone.replace(/\D/g, '');
     this.logger.log(
@@ -123,8 +122,10 @@ export class WhatsappWebhookService {
       this.logger.log(
         `✅ Negocio "${business.name}" activado con número ${phone}`,
       );
-    } catch (error) {
-      this.logger.error(`Error en activación: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error desconocido';
+      this.logger.error(`Error en activación: ${errorMessage}`);
       await this.whatsappService.sendMessage(
         phone,
         '❌ Ocurrió un error al activar tu negocio. Inténtalo de nuevo.',
@@ -195,11 +196,15 @@ export class WhatsappWebhookService {
       }
 
       // Obtener ventas del día actual del negocio para el contexto de la IA
-      const todaySales = await this.salesService.getSalesToday(business.id);
+      const businessId = business.id as string;
+      const businessName = business.name as string;
+      const businessUserId = business.user_id as string;
+
+      const todaySales = await this.salesService.getSalesToday(businessId);
 
       // Clasificar y procesar con OpenAI (GitHub Models)
       const aiResponse = await this.openaiService.classifyAndProcess(text, {
-        businessName: business.name,
+        businessName: businessName,
         todaySales: todaySales,
       });
 
@@ -207,18 +212,18 @@ export class WhatsappWebhookService {
         const saleData = aiResponse.saleData;
 
         // Guardar en la base de datos
-        const sale = await this.salesService.createSale(
+        await this.salesService.createSale(
           {
             product_name: saleData.product_name,
             amount: saleData.amount,
             payment_method: saleData.payment_method,
             quantity: saleData.quantity,
             location: saleData.location || 'Tienda',
-            business_id: business.id,
+            business_id: businessId,
             source: source,
             raw_message: text,
           },
-          business.user_id,
+          businessUserId,
         );
 
         // Enviar confirmación
@@ -234,14 +239,16 @@ export class WhatsappWebhookService {
         );
 
         this.logger.log(
-          `✅ Venta registrada para "${business.name}": ${saleData.product_name} - Bs.${saleData.amount} [${saleData.location || 'Tienda'}]`,
+          `✅ Venta registrada para "${businessName}": ${saleData.product_name} - Bs.${saleData.amount} [${saleData.location || 'Tienda'}]`,
         );
       } else if (aiResponse.intent === 'chat' && aiResponse.chatResponse) {
         // Responder directamente con la respuesta del chatbot conversacional
         await this.whatsappService.sendMessage(phone, aiResponse.chatResponse);
       }
-    } catch (error) {
-      this.logger.error(`Error procesando mensaje: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error desconocido';
+      this.logger.error(`Error procesando mensaje: ${errorMessage}`);
       await this.whatsappService.sendMessage(
         phone,
         `❌ No pude procesar tu mensaje.\n\n` +

@@ -6,6 +6,7 @@ export interface ExtractedSaleData {
   quantity: number;
   amount: number;
   payment_method: string;
+  location: string;
 }
 
 @Injectable()
@@ -43,16 +44,20 @@ export class GroqService {
         response_format: 'text',
       });
 
-      const text =
-        typeof transcription === 'string'
-          ? transcription
-          : (transcription as any).text || '';
+      let text = '';
+      if (typeof transcription === 'string') {
+        text = transcription;
+      } else if (transcription && typeof transcription === 'object') {
+        text = String((transcription as unknown as { text?: unknown }).text || '');
+      }
 
       this.logger.log(`Audio transcrito: "${text.substring(0, 100)}..."`);
       return text.trim();
-    } catch (error) {
-      this.logger.error(`Error en transcripción: ${error.message}`);
-      throw new Error(`Error al transcribir audio: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error desconocido';
+      this.logger.error(`Error en transcripción: ${errorMessage}`);
+      throw new Error(`Error al transcribir audio: ${errorMessage}`);
     }
   }
 
@@ -71,17 +76,19 @@ Claves del JSON:
 - "product_name": string (qué vendió, incluye cantidad en el nombre, ej: "2 Empanadas")
 - "quantity": number (cantidad de items vendidos, si no se menciona asume 1)
 - "amount": number (monto total numérico en bolivianos)
-- "payment_method": string (debe ser exactamente uno de: "Efectivo", "QR", "Transferencia", "Tarjeta")
+- "payment_method": string (debe ser exactamente uno de: "Efectivo", "QR", "Transferencia", "Tarjeta". Deduce de palabras clave: "efectivo", "cash" = Efectivo; "qr", "código qr" = QR; "transferencia", "banco" = Transferencia; "tarjeta", "débito" = Tarjeta. Por defecto "Efectivo")
+- "location": string (debe ser exactamente uno de: "Tienda", "Feria", "Delivery". Deduce de palabras clave: "feria", "mercado" = Feria; "delivery", "a domicilio", "envío", "entregué", "para llevar" = Delivery; "tienda", "local", "negocio", "bodega" = Tienda. Por defecto "Tienda")
 
 Reglas:
 - Si no se menciona método de pago, asume "Efectivo".
+- Si no se menciona ubicación, asume "Tienda".
 - Si no se menciona cantidad, asume 1.
 - Si el usuario dice "pesitos", "bolivianos", "bs", son bolivianos.
 - Siempre devuelve el monto como número, sin simbolos.
 
 Ejemplo:
-User: "vendí 3 jugos por 15 pesitos me pagaron con qr"
-Assistant: {"product_name":"3 Jugos","quantity":3,"amount":15,"payment_method":"QR"}`;
+User: "vendí 3 jugos por 15 pesitos me pagaron con qr en la feria"
+Assistant: {"product_name":"3 Jugos","quantity":3,"amount":15,"payment_method":"QR","location":"Feria"}`;
 
       const chatCompletion = await this.groq.chat.completions.create({
         messages: [
@@ -108,14 +115,17 @@ Assistant: {"product_name":"3 Jugos","quantity":3,"amount":15,"payment_method":"
       // Valores por defecto
       parsed.quantity = parsed.quantity || 1;
       parsed.payment_method = parsed.payment_method || 'Efectivo';
+      parsed.location = parsed.location || 'Tienda';
 
       this.logger.log(
-        `Venta extraída: ${parsed.product_name} - Bs.${parsed.amount} (${parsed.payment_method})`,
+        `Venta extraída: ${parsed.product_name} - Bs.${parsed.amount} (${parsed.payment_method}) [${parsed.location}]`,
       );
 
       return parsed;
-    } catch (error) {
-      this.logger.error(`Error extrayendo datos de venta: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error desconocido';
+      this.logger.error(`Error extrayendo datos de venta: ${errorMessage}`);
       throw new Error(
         `No pude entender la venta. Intenta de nuevo con más detalle.`,
       );

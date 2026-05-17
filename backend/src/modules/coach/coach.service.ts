@@ -32,10 +32,7 @@ export class CoachService {
         businessId,
       );
 
-      const totalSales = sales.reduce(
-        (sum, sale) => sum + sale.amount,
-        0,
-      );
+      const totalSales = sales.reduce((sum, sale) => sum + sale.amount, 0);
 
       const salesContext = {
         totalVentas: sales.length,

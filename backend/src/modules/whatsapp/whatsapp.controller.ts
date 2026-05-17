@@ -69,11 +69,10 @@ export class WhatsappController {
 
           for (const message of value.messages) {
             const senderPhone = message.from;
-            const senderName = value.contacts?.[0]?.profile?.name;
 
             // Procesar en background para no bloquear la respuesta a Meta
             this.webhookService
-              .processIncomingMessage(senderPhone, message, senderName)
+              .processIncomingMessage(senderPhone, message)
               .catch((error) => {
                 this.logger.error(
                   `Error procesando mensaje de ${senderPhone}: ${error.message}`,
