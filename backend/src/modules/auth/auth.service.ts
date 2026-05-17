@@ -19,23 +19,62 @@ export class AuthService {
     );
   }
 
+  /**
+   * Login con phone + PIN
+   * Busca el usuario por teléfono y compara el PIN
+   */
   async login(loginDto: LoginDto) {
-    // TODO: Validar contra Supabase
-    // Por ahora, retornar un token de ejemplo
+    // Buscar usuario por teléfono
+    const { data: user, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('phone', loginDto.phone)
+      .eq('status', 'active')
+      .single();
+
+    if (error || !user) {
+      throw new UnauthorizedException('Usuario no encontrado. Verifica tu número de teléfono.');
+    }
+
+    // Comparar PIN
+    if (user.pin !== loginDto.pin) {
+      throw new UnauthorizedException('PIN incorrecto');
+    }
+
+    // Buscar el negocio del usuario
+    const { data: business } = await this.supabase
+      .from('businesses')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single();
+
+    // Generar JWT
     const payload = {
-      email: loginDto.email,
-      sub: 'user-id-123',
+      sub: user.id,
+      email: user.email,
+      phone: user.phone,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: 'user-id-123',
-        email: loginDto.email,
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
       },
+      business: business ? {
+        id: business.id,
+        name: business.name,
+        category: business.category,
+      } : null,
     };
   }
 
+  /**
+   * Registro completo: crea usuario + negocio en Supabase
+   */
   async register(registerDto: RegisterDto) {
     try {
       // Crear usuario en Supabase
@@ -87,7 +126,7 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      // Enviar credenciales por WhatsApp
+      // Enviar credenciales por WhatsApp (no bloquea si falla)
       await this.whatsappService.sendCredentials(
         registerDto.phone,
         registerDto.email,
@@ -101,7 +140,7 @@ export class AuthService {
           id: userData.id,
           email: registerDto.email,
           full_name: registerDto.full_name,
-          pin: registerDto.pin,
+          phone: registerDto.phone,
         },
         business: {
           id: businessData.id,
@@ -121,6 +160,3 @@ export class AuthService {
     }
   }
 }
-
-
-
