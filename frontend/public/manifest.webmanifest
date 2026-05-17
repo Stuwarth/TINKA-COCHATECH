@@ -10,21 +10,21 @@
   "theme_color": "#002C6A",
   "icons": [
     {
-      "src": "/logoTinkaChatBot.png",
+      "src": "favicon.ico.",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/ico",
       "purpose": "any"
     },
     {
-      "src": "/logoTinkaChatBot.png",
+      "src": "favicon.ico",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/ico",
       "purpose": "any"
     },
     {
-      "src": "/logoTinkaChatBot.png",
+      "src": "favicon.ico",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/ico",
       "purpose": "maskable"
     }
   ]
